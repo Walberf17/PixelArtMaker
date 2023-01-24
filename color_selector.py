@@ -49,7 +49,10 @@ class ColorSelector:
 		self.color = "black"
 
 	def draw(self, screen_to_draw):
-		pg.draw.rect(screen_to_draw, self.color, self.small_rect)
+		color = self.color
+		if color == [0,0,0,0]:
+			color = [255]*4
+		pg.draw.rect(screen_to_draw, color, self.small_rect)
 
 		if self.selecting:
 			color = "red"

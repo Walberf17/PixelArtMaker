@@ -74,8 +74,8 @@ class DrawingGrid(Sprite):
         self.image = pg.Surface(self.rect.size).convert_alpha()
         self.fill(self.background)
 
-        self.selection_size_rect = pg.Rect([0,0], calc_proportional_size([.05,.1], max_rect=self.rect_to_be))
-        self.selection_size_rect.center = calc_proportional_size([.05, .35], max_rect=self.rect_to_be)
+        self.selection_size_rect = pg.Rect([0,0], calc_proportional_size([.025,.05], max_rect=self.rect_to_be))
+        self.selection_size_rect.center = calc_proportional_size([.07-0.025, .35], max_rect=self.rect_to_be)
 
         self.neighborhood_func = self.get_1_neighborhood
 
@@ -117,11 +117,13 @@ class DrawingGrid(Sprite):
             'path': 'Images', '3': {'address': 'size3.png'},
 
         }
-        Button(image='1', area=[.05,.1], center=[.05, .35], rect_to_be=self.rect_to_be , groups=[self.buttons],
+        area = pg.Vector2([.025,.05])
+        center = pg.Vector2([.07, .35])
+        Button(image='1', area=area, center=center-(area.x,0), rect_to_be=self.rect_to_be , groups=[self.buttons],
                on_click_up=partial(self.set_size, 1), dict_with_images=dict_with_images)
-        Button(image='2', area=[.05,.1], center=[.10, .35], rect_to_be=self.rect_to_be , groups=[self.buttons],
+        Button(image='2', area=area, center=center, rect_to_be=self.rect_to_be , groups=[self.buttons],
                on_click_up=partial(self.set_size, 4), dict_with_images=dict_with_images)
-        Button(image='3', area=[.05,.1], center=[.15, .35], rect_to_be=self.rect_to_be , groups=[self.buttons],
+        Button(image='3', area=area, center=center+(area.x,0), rect_to_be=self.rect_to_be , groups=[self.buttons],
                on_click_up=partial(self.set_size, 8), dict_with_images=dict_with_images)
 
     def create_rect(self, idx):
@@ -136,7 +138,7 @@ class DrawingGrid(Sprite):
         :return:
         """
         screen_to_draw.blit(self.image, self.rect.topleft)
-        self.color_picker.draw(screen_to_draw)
+
 
         pg.draw.rect(screen_to_draw, 'white', self.selection_size_rect)
         for btn in self.buttons:
@@ -155,6 +157,22 @@ class DrawingGrid(Sprite):
             pos_0 = [self.rect.left, self.rect.top+self.cells_size[1]*row]
             pos_1 = [self.rect.right, self.rect.top+self.cells_size[1]*row]
             pg.draw.line(surface=screen_to_draw, color='gray', start_pos=pos_0, end_pos=pos_1, width=3)
+
+        self.color_picker.draw(screen_to_draw)
+
+        mouse_pos = pg.mouse.get_pos()
+        if not self.clicked and self.rect.collidepoint(mouse_pos):
+            center_idx = self.get_index(mouse_pos)
+            indexes = self.get_neighborhoods(center_idx)
+            new_surf = pg.Surface(self.rect.size).convert_alpha()
+            new_surf.fill([0,0,0,0])
+            for idx in indexes:
+                color = self.color_picker.color
+                if color == [0,0,0,0]:
+                    color = 'white'
+                pg.draw.rect(new_surf, color, self.create_rect(idx))
+            new_surf.set_alpha(150)
+            screen_to_draw.blit(new_surf, self.rect)
 
     def click_down(self, event):
         """
@@ -188,12 +206,16 @@ class DrawingGrid(Sprite):
         """
         # paint the grid
         color = self.color_picker.get_color()
-        # color = 'black'
+
         for btn in self.buttons:
             btn.update()
+
+        mouse_pos = pg.mouse.get_pos()
+
+        center_idx = self.get_index(mouse_pos)
+        indexes = self.get_neighborhoods(center_idx)
+
         if self.clicked:
-            center_idx = self.get_index(pg.mouse.get_pos())
-            indexes = self.get_neighborhoods(center_idx)
             for idx in indexes:
                 if idx not in self.selected_cells:
                     self.selected_cells.add(idx)
@@ -241,9 +263,9 @@ class DrawingGrid(Sprite):
 
     def set_size(self, func):
         funcs_dict = {
-            1: [self.get_1_neighborhood, [.05, .35]],
-            4: [self.get_4_neighborhood, [.10, .35]],
-            8: [self.get_8_neighborhood, [.15, .35]],
+            1: [self.get_1_neighborhood, [.07-0.025, .35]],
+            4: [self.get_4_neighborhood, [.07, .35]],
+            8: [self.get_8_neighborhood, [.07+0.025, .35]],
         }
         self.neighborhood_func, center = funcs_dict.get(func, self.get_1_neighborhood)
         self.selection_size_rect.center = calc_proportional_size(center, max_rect=self.rect_to_be)
@@ -251,8 +273,8 @@ class DrawingGrid(Sprite):
     def get_possibilities(self, idx):
         row, col = idx
         max_rows, max_cols = self.grid_size
-        possible_rows = list(range(max([0, row-1]), min([row+1, max_rows])+1))
-        possible_cols = list(range(max([0, col-1]), min([col+1, max_cols])+1))
+        possible_rows = list(range(max([0, row-1]), min([row+1, max_rows-1])+1))
+        possible_cols = list(range(max([0, col-1]), min([col+1, max_cols-1])+1))
         return [possible_rows, possible_cols]
 
     def get_neighborhoods(self, center_idx):

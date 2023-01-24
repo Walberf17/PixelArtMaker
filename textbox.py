@@ -35,7 +35,7 @@ class TextBox(Sprite):
         :param font: pg.Font object
         :param font_color: pg.Color
         :param bg_color: pg.Color or None
-        :param groups: list of groups to this object to be, if any.
+        :param groups: list, list of groups to this object to be, if any.
         """
         if groups is None:
             groups = []
