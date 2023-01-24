@@ -50,10 +50,12 @@ class ColorSelector:
 
 	def draw(self, screen_to_draw):
 		pg.draw.rect(screen_to_draw, self.color, self.small_rect)
+
 		if self.selecting:
 			color = "red"
 		else:
 			color = "green"
+
 		if self.selecting:
 			screen_to_draw.blit(self.image, self.big_rect)
 		else:
@@ -82,3 +84,6 @@ class ColorSelector:
 
 	def get_color(self):
 		return self.color
+
+	def set_color(self, color):
+		self.color = color

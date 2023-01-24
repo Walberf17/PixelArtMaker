@@ -83,8 +83,9 @@ class Manager:
         # texts
         TextBox(text='Localização:', area=[.2,.1], rect_to_be=self.rect, relative_center=[0.15,.05],
                 font_color='black', bg_color=None, groups=[self.texts])
-        TextBox(text='Resolução:', area=[.2,.1], rect_to_be=self.rect, relative_center=[0.15,.35],
+        TextBox(text='Resolução:', area=[.2,.1], rect_to_be=self.rect, relative_center=[0.15,.55],
                 font_color='black', bg_color=None, groups=[self.texts])
+
 
     def check_folder(self):
         os.makedirs(self.saving_folder, exist_ok=True)
@@ -196,6 +197,7 @@ class Manager:
         cols = int((self.marker_cols.get_percent() * 127) + 1)
         self.grid.change_size([rows, cols])
         self.change_resolution_text()
+
 
 
 # runs

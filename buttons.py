@@ -12,7 +12,7 @@ from textbox import TextBox
 
 
 class Button(Animations):
-    def __init__(self, area=(1, 1), center=None, rect_to_be=None, image: str = None, text=None, on_click_down=None,
+    def __init__(self, area=(1, 1), center=None, rect_to_be=None, image: str = None, text=None, dict_with_images=None, on_click_down=None,
                  on_click_up=None, colors=None, groups=None):
         """
         It creates a rect in the screen, and does a action when interacted. If calls update, when hoovered it slightly
@@ -31,7 +31,7 @@ class Button(Animations):
         if colors is None:
             colors = ['orange', 'orange4', 'orange2']
         Animations.__init__(self, area=area, color=colors[0], rect_to_be=rect_to_be, image_name=image, center=center,
-                            groups=groups)
+                            groups=groups, dict_with_images=dict_with_images)
         self.on_click_down = on_click_down
         self.image = image
         self.clicked = False
@@ -220,7 +220,7 @@ class Button(Animations):
         Just change its color when hoovered or clicked
         :return:
         """
-        if self.clicked:
+        if self.clicked and self.rect.collidepoint(pg.mouse.get_pos()):
             self.color = self.colors[1]
         else:
             self.color = self.colors[0]
