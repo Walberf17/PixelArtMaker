@@ -175,6 +175,9 @@ class Scene:
                 self.finger_up_handler(event)
             elif e_t == pg.FINGERMOTION:
                 self.finger_motion_handler(event)
+            else:
+                # print(event)
+                pass
 
     def finger_motion_handler(self, event):
         for c_list in self.to_finger_motion:

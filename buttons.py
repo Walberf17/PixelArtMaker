@@ -224,3 +224,5 @@ class Button(Animations):
             self.color = self.colors[1]
         else:
             self.color = self.colors[0]
+
+

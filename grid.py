@@ -47,15 +47,13 @@ def calc_proportional_size(expected=None, max_area=(1, 1), max_rect=None):
 # classes
 class DrawingGrid(Sprite):
     def __init__(self, grid_size, area, rect_to_be, background='white', center=(.5, .5), *args, **kwargs):
+        self.color = 'black'
         max_rect = pg.Rect([0, 0], calc_proportional_size(area, max_area=[1, 1], max_rect=rect_to_be))
         self.grid_size = grid_size
         self.cells_dict = {}
         self.cells = dict()
         self.selected_cells = set()
         self.clicked = False
-
-        # color picker
-        self.color_picker = ColorSelector([.85, 0, .1, .1], [0, .0, 1, 1], rect_to_be)
 
         # Groups
         self.buttons = Group()
@@ -73,9 +71,6 @@ class DrawingGrid(Sprite):
         self.rect = new_rect
         self.image = pg.Surface(self.rect.size).convert_alpha()
         self.fill(self.background)
-
-        self.selection_size_rect = pg.Rect([0,0], calc_proportional_size([.025,.05], max_rect=self.rect_to_be))
-        self.selection_size_rect.center = calc_proportional_size([.07-0.025, .35], max_rect=self.rect_to_be)
 
         self.neighborhood_func = self.get_1_neighborhood
 
@@ -106,26 +101,6 @@ class DrawingGrid(Sprite):
             for col in range(cols):
                 self.cells[(row, col)] = self.background
 
-        # Buttons
-        Button(text='Eraser', area=[.1, .1], center=[.75, .05], rect_to_be=self.rect_to_be , groups=[self.buttons],
-               on_click_up=partial(self.set_color, [0,0,0,0]))
-
-        ## for size
-        dict_with_images = {
-            'path': 'Images', '1': {'address': 'size1.png'},
-            'path': 'Images', '2': {'address': 'size2.png'},
-            'path': 'Images', '3': {'address': 'size3.png'},
-
-        }
-        area = pg.Vector2([.025,.05])
-        center = pg.Vector2([.07, .35])
-        Button(image='1', area=area, center=center-(area.x,0), rect_to_be=self.rect_to_be , groups=[self.buttons],
-               on_click_up=partial(self.set_size, 1), dict_with_images=dict_with_images)
-        Button(image='2', area=area, center=center, rect_to_be=self.rect_to_be , groups=[self.buttons],
-               on_click_up=partial(self.set_size, 4), dict_with_images=dict_with_images)
-        Button(image='3', area=area, center=center+(area.x,0), rect_to_be=self.rect_to_be , groups=[self.buttons],
-               on_click_up=partial(self.set_size, 8), dict_with_images=dict_with_images)
-
     def create_rect(self, idx):
         pos = pg.Vector2(self.cells_size).elementwise() * idx[::-1]
         size = self.cells_size
@@ -139,8 +114,6 @@ class DrawingGrid(Sprite):
         """
         screen_to_draw.blit(self.image, self.rect.topleft)
 
-
-        pg.draw.rect(screen_to_draw, 'white', self.selection_size_rect)
         for btn in self.buttons:
             btn.draw(screen_to_draw)
 
@@ -158,7 +131,7 @@ class DrawingGrid(Sprite):
             pos_1 = [self.rect.right, self.rect.top+self.cells_size[1]*row]
             pg.draw.line(surface=screen_to_draw, color='gray', start_pos=pos_0, end_pos=pos_1, width=3)
 
-        self.color_picker.draw(screen_to_draw)
+
 
         mouse_pos = pg.mouse.get_pos()
         if not self.clicked and self.rect.collidepoint(mouse_pos):
@@ -167,7 +140,7 @@ class DrawingGrid(Sprite):
             new_surf = pg.Surface(self.rect.size).convert_alpha()
             new_surf.fill([0,0,0,0])
             for idx in indexes:
-                color = self.color_picker.color
+                color = self.color
                 if color == [0,0,0,0]:
                     color = 'white'
                 pg.draw.rect(new_surf, color, self.create_rect(idx))
@@ -180,8 +153,6 @@ class DrawingGrid(Sprite):
         :param event: pg.MOUSEBUTTONDOWN
         :return: if clicked
         """
-        if self.color_picker.click_down(event):
-            return True
         for btn in self.buttons:
             if btn.click_down(event):
                 return True
@@ -205,10 +176,8 @@ class DrawingGrid(Sprite):
         :return:
         """
         # paint the grid
-        color = self.color_picker.get_color()
+        color = self.color
 
-        for btn in self.buttons:
-            btn.update()
 
         mouse_pos = pg.mouse.get_pos()
 
@@ -221,20 +190,19 @@ class DrawingGrid(Sprite):
                     self.selected_cells.add(idx)
                     self.image.fill(color, self.create_rect(idx))
 
-        self.color_picker.update()
-
     def click_up(self, event=None):
         """
         Deselect the selected cells and set itself as not clicked
         :param event: pg.MOUSEBUTTONUP
         :return: None
         """
-        self.clicked = False
-        self.color_picker.click_up(event)
         for btn in self.buttons:
             if btn.click_up(event):
                 return True
         self.selected_cells.clear()
+        if self.clicked:
+            self.clicked = False
+            return True
         # self.save_image('Images/color_wheel.jpg')
 
     def save_image(self, name):
@@ -259,16 +227,10 @@ class DrawingGrid(Sprite):
         self.image = pg.transform.scale(image, self.rect.size)
 
     def set_color(self, color):
-        self.color_picker.set_color(color)
+        self.color = color
 
-    def set_size(self, func):
-        funcs_dict = {
-            1: [self.get_1_neighborhood, [.07-0.025, .35]],
-            4: [self.get_4_neighborhood, [.07, .35]],
-            8: [self.get_8_neighborhood, [.07+0.025, .35]],
-        }
-        self.neighborhood_func, center = funcs_dict.get(func, self.get_1_neighborhood)
-        self.selection_size_rect.center = calc_proportional_size(center, max_rect=self.rect_to_be)
+    def set_pen_size(self, func):
+        self.neighborhood_func = func
 
     def get_possibilities(self, idx):
         row, col = idx
