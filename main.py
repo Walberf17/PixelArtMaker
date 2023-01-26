@@ -98,17 +98,18 @@ class HelpWindow(Scene):
         i = 0
         size = .9 / len(known_btns)
         for key, text in known_btns.items():
-            center_y = size*i+.5*size
+            center_y = size * i + .5 * size
             texts.append(TextBox(text=key, area=(.2, size), rect_to_be=self.screen_rect, relative_center=[.1, center_y],
                                  font_color="black", bg_color=None))
             texts.append(TextBox(text=' ==> ' + text, area=(.8, size), rect_to_be=self.screen_rect,
                                  relative_center=[.6, center_y], font_color="black", bg_color=None))
-            i+=1
+            i += 1
 
         dict_to_do = {
             'draw': [texts]
         }
         self.set_things_to_do(dict_to_do=dict_to_do)
+
 
 class Manager:
     def __init__(self, rect, grid_size):
@@ -125,7 +126,11 @@ class Manager:
             '3': {'address': 'size3.png'},
             '4': {'address': 'SaveFile 32x32.png',
                   'size': [32, 32]},
-            '5': {'address': 'transparent_bg'}
+            '5': {'address': 'transparent_bg'},
+            '6': {'address': 'Bucket 32x32.png',
+                  'size': [32, 32]},
+            '7': {'address': 'Vertical Mirror 32x32.png',
+                  'size': [32, 32]},
 
         }
 
@@ -171,9 +176,9 @@ class Manager:
                                   center=[0.07 - .07 / 3, .8])
         self.marker_cols = Marker(area=[.025, .25], rect_to_be=self.rect, horizontal=False, groups=self.markers,
                                   center=[0.07 + .07 / 3, .8])
-        self.marker_animator_velocity = Marker(area=[.1, .02], rect_to_be=self.rect, horizontal=True, groups=self.markers,
-                                  center=[0.07, .32])
-
+        self.marker_animator_velocity = Marker(area=[.1, .02], rect_to_be=self.rect, horizontal=True,
+                                               groups=self.markers,
+                                               center=[0.07, .32])
 
         self.marker_rows.set_percent((self.grid_size[0] * 2) / (self.max_resolution * 2))
         self.marker_cols.set_percent((self.grid_size[1] * 2) / (self.max_resolution * 2))
@@ -239,7 +244,6 @@ class Manager:
                on_click_up=partial(self.active_eraser))
 
         ## for pen size
-
         area = pg.Vector2([.025, .05])
         center = pg.Vector2([.07, .4])
         Button(image='1', area=area, center=center - (area.x, 0), rect_to_be=self.rect, groups=[self.btns],
@@ -248,17 +252,28 @@ class Manager:
                on_click_up=partial(self.set_pen_size, 4), dict_with_images=self.dict_with_images)
         Button(image='3', area=area, center=center + (area.x, 0), rect_to_be=self.rect, groups=[self.btns],
                on_click_up=partial(self.set_pen_size, 8), dict_with_images=self.dict_with_images)
+        Button(area=area, center=center + (-area.x, area.y), rect_to_be=self.rect, text=f'Balde',
+               on_click_up=partial(self.set_pen_size, 'color'), groups=[self.btns], image='6',
+               dict_with_images=self.dict_with_images)
+        Button(area=area, center=center + (area.x, area.y), rect_to_be=self.rect, text=f'Es. V',
+               on_click_up=partial(self.set_pen_size, 'mirror vertical'), groups=[self.btns], image='7',
+               dict_with_images=self.dict_with_images)
         self.selection_size_rect.center = calc_proportional_size(center - (area.x, 0), max_rect=self.rect)
 
     def set_pen_size(self, n):
         funcs_dict = {
-            1: [self.grid.get_1_neighborhood, [.07 - 0.025, .35]],
-            4: [self.grid.get_4_neighborhood, [.07, .35]],
-            8: [self.grid.get_8_neighborhood, [.07 + 0.025, .35]],
+            1: [self.grid.get_1_neighborhood, [.07 - 0.025, .4]],
+            4: [self.grid.get_4_neighborhood, [.07, .4]],
+            8: [self.grid.get_8_neighborhood, [.07 + 0.025, .4]],
+            'color': [self.grid.get_same_color_neighborhood, [.07 - 0.025, .45]],
+            'mirror horizontal': [self.grid.get_mirror_horizon, [.07, .45]],
+            'mirror vertical': [self.grid.get_mirror_vertical, [.07 + 0.025, .45]],
+            'mirror full': [self.grid.get_mirror_full, [.07 - 0.025, .5]],
+
         }
         func, center = funcs_dict.get(n, self.grid.get_1_neighborhood)
         self.grid.set_pen_size(func)
-        self.selection_size_rect.centerx = calc_proportional_size(center, max_rect=self.rect)[0]
+        self.selection_size_rect.center = calc_proportional_size(center, max_rect=self.rect)
 
     def change_btn_color(self, btn):
         color = btn.color
@@ -288,29 +303,32 @@ class Manager:
     def save_image(self):
         self.move_to_image()
         max_sprites = self.get_max_sprites()
-        full_size = pg.Vector2(self.grid_size).elementwise() * [max_sprites, len(self.images)]
+        grid_size = self.grid_size[::-1]
+        full_size = pg.Vector2(grid_size).elementwise() * [max_sprites, len(self.images)]
         full_surf = pg.Surface(full_size).convert_alpha()
         full_surf.fill([0, 0, 0, 0])
-        pos_0 = pg.Vector2(self.grid_size)
+        pos_0 = pg.Vector2(grid_size)
         for row, sprite in enumerate(self.images):
             for col, image in enumerate(sprite):
                 new_pos = pos_0.elementwise() * [col, row]
-                new_surf = pg.transform.scale(image, self.grid_size)
+                new_surf = pg.transform.scale(image, grid_size)
                 full_surf.blit(new_surf, new_pos)
 
-        name = input("Choose a name: ")
-        path = os.path.join(self.saving_folder, f'{name} {self.grid_size[0]}x{self.grid_size[1]}.png')
+        # name = input("Choose a name: ")
+        name = 'tests'
+        path = os.path.join(self.saving_folder, f'{name} {grid_size[0]}x{grid_size[1]}.png')
         pg.image.save(full_surf, path)
 
     def animate_animator(self):
-        row, col = self.idx
-        full_size = pg.Vector2(self.grid_size).elementwise() * [len(self.images[row]), 1]
+        max_sprites = len(self.images[self.idx[0]])
+        grid_size = self.grid_size[::-1]
+        full_size = pg.Vector2(grid_size).elementwise() * [max_sprites, 1]
         full_surf = pg.Surface(full_size).convert_alpha()
         full_surf.fill([0, 0, 0, 0])
-        pos_0 = pg.Vector2(self.grid_size)
-        for idx, frame in enumerate(self.images[row]):
-            new_pos = pos_0.elementwise() * [idx, 0]
-            new_surf = pg.transform.scale(frame, self.grid_size)
+        pos_0 = pg.Vector2(grid_size)
+        for col, image in enumerate(self.images[self.idx[0]]):
+            new_pos = pos_0.elementwise() * [col, 0]
+            new_surf = pg.transform.scale(image, grid_size)
             full_surf.blit(new_surf, new_pos)
         path = os.path.join(self.saving_folder, f'animation.png')
         pg.image.save(full_surf, path)
@@ -318,7 +336,7 @@ class Manager:
             'path': os.path.join('Images', 'Sprites'),
             17121990: {
                 "address": 'animation.png',
-                'size': self.grid_size
+                'size': grid_size
             }
         }
         self.animator.define_images(17121990, dict_with_images)
@@ -438,7 +456,7 @@ class Manager:
         self.color_picker.update()
         self.grid.set_color(self.color_picker.get_color())
         self.grid.update()
-        self.animator.update(velocity=self.marker_animator_velocity.get_percent()*8)
+        self.animator.update(velocity=self.marker_animator_velocity.get_percent() * 8)
 
     def change_resolution_text(self):
         rows = max(int((self.marker_rows.get_percent() * self.max_resolution)), 1)
@@ -448,13 +466,20 @@ class Manager:
     def change_resolution(self):
         rows = max(int((self.marker_rows.get_percent() * self.max_resolution)), 1)
         cols = max(int((self.marker_cols.get_percent() * self.max_resolution)), 1)
+        self.grid_size = [rows, cols]
         self.grid.change_size([rows, cols])
         self.change_resolution_text()
         self.move_to_image()
+        self.get_background_image()
+        self.background_func()
 
     def clear_image(self):
         image, frame = self.idx
         self.grid.image.fill([0, 0, 0, 0])
+        self.move_to_image()
+
+    def bucket(self):
+        self.grid.bucket()
         self.move_to_image()
 
     def key_down(self, event):
@@ -470,14 +495,14 @@ class Manager:
             6: partial(self.copy_surf, event),
             25: self.paste_surf,
             58: self.help_window,
-
+            8: partial(self.set_pen_size, 'mirror vertical'),
         }
 
         if event.scancode in funcs:
             func = funcs.get(event.scancode)
             func()
         else:
-            # print(event)
+            print(event)
             pass
 
     def help_window(self):
@@ -491,7 +516,8 @@ class Manager:
     def key_up(self, event):
         funcs = {
             44: partial(self.change_background_func, self.get_background_image),
-            5: self.active_eraser
+            5: self.active_eraser,
+            8: partial(self.set_pen_size, 1),
         }
 
         if event.scancode in funcs:
@@ -512,7 +538,7 @@ class Manager:
 
     def paste_surf(self):
         if self.copied:
-            self.grid.image.blit(self.copied, [0,0])
+            self.grid.image.blit(self.copied, [0, 0])
         self.move_to_image()
 
 
@@ -521,7 +547,7 @@ screen = pg.display.set_mode(pg.display.get_desktop_sizes()[0], pg.FULLSCREEN)
 # screen = pg.display.set_mode([200,200])
 pg.display.set_caption(f'PixelArtMaker')
 screen_rect = screen.get_rect()
-app = Manager(screen_rect, [32, 32])
+app = Manager(screen_rect, [2, 1])
 scene = Scene(screen,
               {'draw': [[app]], 'click_down': [[app]], 'update': [[app]], 'key_down': [[app]], 'key_up': [[app]]},
               fps=60)

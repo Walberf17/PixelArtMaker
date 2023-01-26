@@ -1,4 +1,6 @@
-from pygame.surface import Surface as thing
+a = {1,2,3}
+b = {2,3,4,5}
 
-print(help(thing))
+a = a|b
 
+print(a)
