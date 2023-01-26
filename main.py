@@ -100,9 +100,9 @@ class HelpWindow(Scene):
         for key, text in known_btns.items():
             center_y = size*i+.5*size
             texts.append(TextBox(text=key, area=(.2, size), rect_to_be=self.screen_rect, relative_center=[.1, center_y],
-                                 font_color="black", bg_color=None, keep_ratio=bool))
+                                 font_color="black", bg_color=None))
             texts.append(TextBox(text=' ==> ' + text, area=(.8, size), rect_to_be=self.screen_rect,
-                                 relative_center=[.6, center_y], font_color="black", bg_color=None, keep_ratio=bool))
+                                 relative_center=[.6, center_y], font_color="black", bg_color=None))
             i+=1
 
         dict_to_do = {
@@ -165,7 +165,7 @@ class Manager:
         rows, cols = self.grid_size
         self.text_resolution = TextBox(text=f'[{rows} x {cols}]', area=[.1, .05], rect_to_be=self.rect,
                                        relative_center=[.07, .65], font_color='black', bg_color=None,
-                                       groups=[self.texts], keep_ratio=bool)
+                                       groups=[self.texts])
 
         self.marker_rows = Marker(area=[.025, .25], rect_to_be=self.rect, horizontal=False, groups=self.markers,
                                   center=[0.07 - .07 / 3, .8])
@@ -183,7 +183,8 @@ class Manager:
         self.selection_size_rect = pg.Rect([0, 0], calc_proportional_size([.025, .05], max_rect=self.rect))
 
         self.text_idx = TextBox(text='[1 , 1]', area=[.1, .05], rect_to_be=self.rect, relative_center=[.5, .05],
-                                font_color='black', bg_color=None, groups=[self.texts], keep_ratio=bool)
+                                font_color='black', bg_color=None, groups=[self.texts], resize_text=True,
+                                keep_ratio=True)
 
         self.background_func = self.get_background_image
 
@@ -229,9 +230,9 @@ class Manager:
 
         # texts
         TextBox(text='Localização:', area=[.1, .065], rect_to_be=self.rect, relative_center=[0.35, .05],
-                font_color='black', bg_color=None, groups=[self.texts], keep_ratio=bool)
+                font_color='black', bg_color=None, groups=[self.texts])
         TextBox(text='Resolução:', area=[.1, .05], rect_to_be=self.rect, relative_center=[0.07, .55],
-                font_color='black', bg_color=None, groups=[self.texts], keep_ratio=bool)
+                font_color='black', bg_color=None, groups=[self.texts])
 
         # Eraser
         Button(text='Eraser', area=[.1, .1], center=[.75, .05], rect_to_be=self.rect, groups=[self.btns],

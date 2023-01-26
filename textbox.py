@@ -53,6 +53,7 @@ class TextBox(Sprite):
         self.bg_color = bg_color
         self.rect_to_be = rect_to_be
         self.rect = pg.Rect((0, 0), calc_proportional_size(expected=area, max_area=[1, 1], max_rect=self.rect_to_be))
+        self.max_rect = self.rect.copy()
 
         if (relative_center is None) ^ (absolute_center is None):
             self.relative_center = relative_center
@@ -77,7 +78,7 @@ class TextBox(Sprite):
         new_surface.blit(txt, (0, 0))
 
         if self.keep_ratio:
-            self.rect = new_surface.get_rect().fit(self.rect)
+            self.rect = new_surface.get_rect().fit(self.max_rect)
         if self.resize_text:
             new_surface = pg.transform.scale(new_surface, self.rect.size)
         else:
