@@ -1,3 +1,4 @@
-import pygame as pg
+from pygame.surface import Surface as thing
 
-a = pg.Surface((300,300))
+print(help(thing))
+

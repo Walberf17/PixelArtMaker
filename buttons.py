@@ -10,9 +10,9 @@ from animations import Animations
 from textbox import TextBox
 
 
-
 class Button(Animations):
-    def __init__(self, area=(1, 1), center=None, rect_to_be=None, image: str = None, text=None, dict_with_images=None, on_click_down=None,
+    def __init__(self, area=(1, 1), center=None, rect_to_be=None, image: str = None, text=None, dict_with_images=None,
+                 on_click_down=None,
                  on_click_up=None, colors=None, groups=None):
         """
         It creates a rect in the screen, and does a action when interacted. If calls update, when hoovered it slightly
@@ -111,13 +111,13 @@ class Button(Animations):
 		:return: None
 		"""
         Animations.draw(self, screen_to_draw=screen_to_draw)
-
-        if self.text is not None:
+        if self.text and self.images is None:
             self.text.draw(screen_to_draw=screen_to_draw)
 
     def click_down_edit(self, event, button_pressed=None):
         """
         create and put buttons_group in place, then print them
+        :param button_pressed: mouse button clicked, int
         :param event: pg.Event
         :return: boo
         """
@@ -224,5 +224,5 @@ class Button(Animations):
             self.color = self.colors[1]
         else:
             self.color = self.colors[0]
-
-
+        if self.images:
+            Animations.update(self)

@@ -82,6 +82,20 @@ class Manager:
         """
         Manage the images created, load and save then in the specified format
         """
+
+        # dict with images
+
+        self.dict_with_images = {
+            'path': 'Images',
+            '1': {'address': 'size1.png'},
+            '2': {'address': 'size2.png'},
+            '3': {'address': 'size3.png'},
+            '4': {'address': 'SaveFile 32x32.png',
+                  'size': [32, 32]},
+            '5': {'address': 'transparent_bg'}
+
+        }
+
         self.saving_folder = os.path.join('.', 'Images', 'Sprites')
         self.images = list()  # a list of list, each list is a sprite(pg.Surface), different list mean different
         # sprites actions
@@ -92,7 +106,6 @@ class Manager:
         # groups
         self.btns = pg.sprite.Group()
         self.texts = pg.sprite.Group()
-
 
         self.markers = set()
         self.grid = DrawingGrid(area=(.75, .9), grid_size=self.grid_size, rect_to_be=screen_rect,
@@ -106,7 +119,7 @@ class Manager:
         self.colors = ['black'] * 5
         self.pallet = list()
 
-        self.animator = Animations(fps=45, area=[.1,.2], center=[.07,.2], rect_to_be=self.rect, color=[0,0,0,0])
+        self.animator = Animations(fps=45, area=[.1, .2], center=[.07, .2], rect_to_be=self.rect, color=[0, 0, 0, 0])
 
         # groups
         self.btns = Group()
@@ -114,6 +127,7 @@ class Manager:
 
         # color picker
         self.color_picker = ColorSelector([.85, 0, .1, .1], [0, .0, 1, 1], self.rect)
+        self.bg_for_grid = pg.image.load(os.path.join('Images', 'transparent_bg.jpg'))
 
         rows, cols = self.grid_size
         self.text_resolution = TextBox(text=f'[{rows} x {cols}]', area=[.1, .05], rect_to_be=self.rect,
@@ -134,10 +148,12 @@ class Manager:
 
         self.text_idx = TextBox(text='[1 , 1]', area=[.1, .05], rect_to_be=self.rect, relative_center=[.5, .05],
                                 font_color='black', bg_color=None, groups=[self.texts])
+
+        self.background_func = self.get_background_image
+
         self.build()
         self.check_folder()
         self.change_resolution()
-        # self.animate_animator()
 
     def build(self):
 
@@ -160,11 +176,12 @@ class Manager:
 
         # Buttons to manage things
         Button(area=self.button_sizes, center=[.07, .05], rect_to_be=self.rect, text=f'Salvar',
-               on_click_up=partial(self.save_image), groups=[self.btns])
+               on_click_up=partial(self.save_image), groups=[self.btns], image='4',
+               dict_with_images=self.dict_with_images)
         Button(area=self.button_sizes, center=[1 - default_x_dif, .9], rect_to_be=self.rect, text=f'Sair',
                on_click_up=partial(sys.exit), groups=[self.btns])
         Button(area=self.button_sizes, center=[1 - default_x_dif, .8], rect_to_be=self.rect, text=f'Limpar',
-               on_click_up=partial(self.clear_image, [0,0,0,0]), groups=[self.btns])
+               on_click_up=partial(self.clear_image, [0, 0, 0, 0]), groups=[self.btns])
 
         # buttons to manage colors
         for i in range(5):
@@ -183,20 +200,15 @@ class Manager:
                on_click_up=partial(self.active_eraser))
 
         ## for pen size
-        dict_with_images = {
-            'path': 'Images', '1': {'address': 'size1.png'},
-            'path': 'Images', '2': {'address': 'size2.png'},
-            'path': 'Images', '3': {'address': 'size3.png'},
 
-        }
         area = pg.Vector2([.025, .05])
         center = pg.Vector2([.07, .4])
         Button(image='1', area=area, center=center - (area.x, 0), rect_to_be=self.rect, groups=[self.btns],
-               on_click_up=partial(self.set_pen_size, 1), dict_with_images=dict_with_images)
+               on_click_up=partial(self.set_pen_size, 1), dict_with_images=self.dict_with_images)
         Button(image='2', area=area, center=center, rect_to_be=self.rect, groups=[self.btns],
-               on_click_up=partial(self.set_pen_size, 4), dict_with_images=dict_with_images)
+               on_click_up=partial(self.set_pen_size, 4), dict_with_images=self.dict_with_images)
         Button(image='3', area=area, center=center + (area.x, 0), rect_to_be=self.rect, groups=[self.btns],
-               on_click_up=partial(self.set_pen_size, 8), dict_with_images=dict_with_images)
+               on_click_up=partial(self.set_pen_size, 8), dict_with_images=self.dict_with_images)
         self.selection_size_rect.center = calc_proportional_size(center - (area.x, 0), max_rect=self.rect)
 
     def set_pen_size(self, n):
@@ -215,16 +227,18 @@ class Manager:
         self.set_color(color)
 
     def active_eraser(self):
-        if self.color_picker.color == [0,0,0,0]:
+        if self.color_picker.color == [0, 0, 0, 0]:
             self.color_picker.color = self.colors[0]
         else:
             self.color_picker.color = [0, 0, 0, 0]
 
     def set_color(self, color):
+        if color in [[0, 0, 0, 0], (0, 0, 0, 0)]:
+            return
+        self.color_picker.set_color(color)
         if color not in self.colors:
             self.colors.insert(0, color)
             self.colors.pop()
-
             for btn, color in zip(self.pallet, self.colors):
                 btn.colors = [color] * 3
                 btn.color = color
@@ -262,7 +276,7 @@ class Manager:
         path = os.path.join(self.saving_folder, f'animation.png')
         pg.image.save(full_surf, path)
         dict_with_images = {
-            'path': os.path.join('Images','Sprites'),
+            'path': os.path.join('Images', 'Sprites'),
             17121990: {
                 "address": 'animation.png',
                 'size': self.grid_size
@@ -320,32 +334,9 @@ class Manager:
         # handle things
         self.idx = [new_row, new_col]
         self.grid.load_image(self.images[new_row][new_col])
-        self.get_background_image()
-        self.text_idx.change_text(f'[{new_row+1} , {new_col+1}]')
+        self.background_func()
+        self.text_idx.change_text(f'[{new_row + 1} , {new_col + 1}]')
         self.animate_animator()
-
-    def move_to_image2(self, rows=0, cols=0):
-        row, col = self.idx
-        new_row = int(max([0, row + rows]))
-        new_col = int(max([0, col + cols]))
-        if new_row >= len(self.images):
-            new_row = len(self.images)
-            new_col = 0
-            new_image = pg.Surface(self.grid.rect.size).convert_alpha()
-            new_image.fill([0, 0, 0, 0])
-            self.images.append([new_image])
-        if new_row != row:
-            new_col = 0
-        if new_col >= len(self.images[new_row]):
-            new_col = len(self.images[new_row])
-            new_image = pg.Surface(self.grid.rect.size).convert_alpha()
-            new_image.fill([0, 0, 0, 0])
-            self.images[new_row].append(new_image)
-        self.idx = [new_row, new_col]
-        self.images[row][col] = self.grid.get_image()
-        self.grid.load_image(self.images[new_row][new_col])
-        self.get_background_image()
-        self.text_idx.change_text(f'[{new_row} , {new_col}]')
 
     def click_down(self, event):
         for btn in self.btns:
@@ -370,15 +361,16 @@ class Manager:
                 self.change_resolution()
         if self.grid.click_up(event):
             self.move_to_image()
-            self.animate_animator()
         if self.color_picker.click_up(event):
             color = self.color_picker.get_color()
             self.set_color(color)
 
     def draw(self, screen_to_draw):
 
+        screen_to_draw.blit(self.bg_for_grid, self.grid.rect, self.grid.rect)
+        screen_to_draw.blit(self.bg_for_grid, self.animator.rect, self.animator.rect)
         pg.draw.rect(screen_to_draw, 'white', self.selection_size_rect)
-        pg.draw.rect(screen_to_draw, 'white', self.grid.rect)
+        # pg.draw.rect(screen_to_draw, 'white', self.grid.rect)
 
         self.grid.draw(screen_to_draw)
 
@@ -419,31 +411,23 @@ class Manager:
         cols = max(int((self.marker_cols.get_percent() * self.max_resolution)), 1)
         self.grid.change_size([rows, cols])
         self.change_resolution_text()
-
-    def clear_image(self, color):
-        image, frame = self.idx
-        self.grid.image.fill(color)
         self.move_to_image()
-        self.animate_animator()
+
+    def clear_image(self):
+        image, frame = self.idx
+        self.grid.image.fill([0, 0, 0, 0])
+        self.move_to_image()
 
     def key_down(self, event):
         funcs = {
-            79: partial(self.move_to_image, 0 , 1),
-            80: partial(self.move_to_image, 0 , -1),
-            81: partial(self.move_to_image, 1 , 0),
-            82: partial(self.move_to_image, -1 , 0),
-            8: partial(self.get_first_as_background),
+            79: partial(self.move_to_image, 0, 1),
+            80: partial(self.move_to_image, 0, -1),
+            81: partial(self.move_to_image, 1, 0),
+            82: partial(self.move_to_image, -1, 0),
+            44: partial(self.change_background_func, self.get_first_as_background),
             5: self.active_eraser,
-        }
-
-        if event.scancode in funcs:
-            func = funcs.get(event.scancode)
-            func()
-
-    def key_up(self, event):
-        funcs = {
-            8: partial(self.get_background_image),
-            5: self.active_eraser,
+            76: partial(self.clear_image),
+            18: self.pick_color
         }
 
         if event.scancode in funcs:
@@ -452,11 +436,35 @@ class Manager:
         else:
             print(event.scancode)
 
+    def change_background_func(self, background):
+        self.background_func = background
+        self.background_func()
+
+    def key_up(self, event):
+        funcs = {
+            44: partial(self.change_background_func, self.get_background_image),
+            5: self.active_eraser,
+        }
+
+        if event.scancode in funcs:
+            func = funcs.get(event.scancode)
+            func()
+
+    def pick_color(self):
+        pos = pg.Vector2(pg.mouse.get_pos())
+        if self.grid.rect.collidepoint(pos):
+            pos -= self.grid.rect.topleft
+            color = self.grid.image.get_at([int(pos.x), int(pos.y)])
+            print(color)
+            self.set_color(color)
+
 
 # runs
-screen = pg.display.set_mode((1920, 1080), pg.FULLSCREEN)
-# screen = pg.display.set_mode((200,200))
+screen = pg.display.set_mode(pg.display.get_desktop_sizes()[0], pg.FULLSCREEN)
+pg.display.set_caption(f'PixelArtMaker')
 screen_rect = screen.get_rect()
 app = Manager(screen_rect, [32, 32])
-scene = Scene(screen, {'draw': [[app]], 'click_down': [[app]], 'update': [[app]], 'key_down':[[app]], 'key_up':[[app]]},  fps=60)
+scene = Scene(screen,
+              {'draw': [[app]], 'click_down': [[app]], 'update': [[app]], 'key_down': [[app]], 'key_up': [[app]]},
+              fps=60)
 scene.run()

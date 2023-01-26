@@ -188,21 +188,15 @@ class Scene:
 
     def finger_down_handler(self, event):
         """
-		Default finger down handler.
-
-		Loops the objects in self.to_finger_down.
-
-		It calls the default --> obj.finger_down(event).
-
-		If the obj returns True, it stops the loop.
-
-		If there is no objects in self.to_finger_down,
-		it saves the object in a set with the clicked
-		objects in self.obj_clicked.
-
-		Change if needed
-
-		"""
+        Default finger down handler.
+        Loops the objects in self.to_finger_down.
+        It calls the default --> obj.finger_down(event).
+        If the obj returns True, it stops the loop.
+        If there is no objects in self.to_finger_down,
+        It saves the object in a set with the clicked
+        Objects in self.obj_clicked.
+        Change if needed
+        """
         for c_list in self.to_finger_down:
             for obj in c_list:
                 if obj.finger_down(event):
@@ -211,21 +205,15 @@ class Scene:
 
     def finger_up_handler(self, event):
         """
-		param: pg.FINGERUP event
-		Default finger up handler.
-
-		Loops the objects in self.to_finger_up.
-
-		It loops throught the objects in self.obj_clicked,
-		then in self.to_finger_up, then if interacted with
-		anything, it breaks the loop
-
-		It calls the default --> obj.finger_up(event).
-
-
-		Change if needed
-
-		"""
+        param: pg.FINGERUP event
+        Default finger up handler.
+        Loops the objects in self.to_finger_up.
+        It loops throught the objects in self.obj_clicked,
+        then in self.to_finger_up, then if interacted with
+        anything, it breaks the loop
+        It calls the default --> obj.finger_up(event).
+        Change if needed
+        """
         if self.to_finger_up:
             # loops from self.obj_clicked
             for obj in self.obj_clicked:
@@ -246,20 +234,14 @@ class Scene:
 
     def click_down_handler(self, event):
         """
-		Default click down handler.
-
-		Loops the objects in self.to_click_down.
-
-		It calls the default --> obj.click_down(event).
-
-		If the obj returns True, it stops the loop.
-
-		It saves the object in a set with the clicked
-		objects in self.obj_clicked.
-
-		Change if needed
-
-		"""
+        Default click down handler.
+        Loops the objects in self.to_click_down.
+        It calls the default --> obj.click_down(event).
+        If the obj returns True, it stops the loop.
+        It saves the object in a set with the clicked
+        objects in self.obj_clicked.
+        Change if needed
+        """
         pg.mouse.get_rel()  # for smooth movement
         for c_list in self.to_click_down:
             for obj in c_list:
@@ -270,20 +252,14 @@ class Scene:
 
     def click_up_handler(self, event):
         """
-		param: pg.MOUSEBUTTONUP event
-		Default click up handler.
-
-		Loops the objects in self.to_click_up.
-
-		If there is no objects in self.to_click_up,
-		it loops throught the objects in self.obj_clicked.
-
-		It calls the default --> obj.click_up(event).
-
-
-		Change if needed
-
-		"""
+        param: pg.MOUSEBUTTONUP event
+        Default click up handler.
+        Loops the objects in self.to_click_up.
+        If there is no objects in self.to_click_up,
+        it loops throught the objects in self.obj_clicked.
+        It calls the default --> obj.click_up(event).
+        Change if needed
+        """
 
         # loops from self.obj_clicked
         for obj in self.obj_clicked:
@@ -306,26 +282,21 @@ class Scene:
 
     def multi_gesture_handler(self, event):
         """
-		Default multi_gesture_handler.
-
-		For touch devices
-
-		Loops throught self.to_multi_gesture and
-		calls --> obj.multi_gesture(event)
-
-		"""
+        Default multi_gesture_handler.
+        For touch devices
+        Loops throught self.to_multi_gesture and
+        calls --> obj.multi_gesture(event)
+        """
         for c_list in self.to_multi_gesture:
             for obj in c_list:
                 obj.multi_gesture(event)
 
     def key_down_handler(self, event):
         """
-		Default press key handler.
-
-		Loops throught self.to_key_down and
-		calls --> obj.key_down(event)
-
-		"""
+        Default press key handler.
+        Loops through self.to_key_down and
+        calls --> obj.key_down(event)
+        """
         pg.mouse.get_rel()  # for smooth movement
         for c_list in self.to_key_down:
             for obj in c_list:
@@ -333,22 +304,20 @@ class Scene:
 
     def key_up_handler(self, event):
         """
-		Default press key handler.
-
-		Loops throught self.to_key_up and
-		calls --> obj.key_up(event)
-		"""
+        Default press key handler.
+        Loops throught self.to_key_up and
+        calls --> obj.key_up(event)
+        """
         for c_list in self.to_key_up:
             for obj in c_list:
                 obj.key_up(event)
 
     def update_handler(self):
         """
-		Default press key handler.
-
-		Loops throught self.to_update and
-		calls --> obj.update()
-		"""
+        Default press key handler.
+        Loops throught self.to_update and
+        calls --> obj.update()
+        """
         # pg.mouse.get_rel()
         for c_list in self.to_update:
             for obj in c_list:
@@ -356,11 +325,10 @@ class Scene:
 
     def move_handler(self):
         """
-		Default move handler.
-
-		Loops throught self.to_move and
-		calls --> obj.move()
-		"""
+        Default move handler.
+        Loops throught self.to_move and
+        calls --> obj.move()
+        """
         # pg.mouse.get_rel()
         for c_list in self.to_move:
             for obj in c_list:
@@ -368,14 +336,12 @@ class Scene:
 
     def draw_handler(self):
         """
-		Default draw handler.
-
-		Loops throught self.to_draw and
-		calls --> obj.draw(self.screen)
-
-		It fills the screen with the self.background color.
-		Than draws the things, then updates the display.
-		"""
+        Default draw handler.
+        Loops throught self.to_draw and
+        calls --> obj.draw(self.screen)
+        It fills the screen with the self.background color.
+        Than draws the things, then updates the display.
+        """
 
         self.screen.fill(self.background)
         for c_list in self.to_draw:
@@ -384,10 +350,10 @@ class Scene:
 
     def run_other(self, scene):
         """
-		Starts other scene.
-		:param scene: A Scene object
-		:return: None
-		"""
+        Starts other scene.
+        :param scene: A Scene object
+        :return: None
+        """
         if type(scene) == type:
             scene().run()
         else:
@@ -395,10 +361,10 @@ class Scene:
 
     def stop_other(self, scene):
         """
-		Stops other scene.
-		:param scene: A Scene object
-		:return: None
-		"""
+        Stops other scene.
+        :param scene: A Scene object
+        :return: None
+        """
         if type(scene) == type:
             scene().stop()
         else:
@@ -410,6 +376,7 @@ class Scene:
     def quit(self):
         pg.quit()
         sys.exit()
+
 
 class Canvas:
     def __init__(self):
