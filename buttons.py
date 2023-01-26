@@ -41,7 +41,7 @@ class Button(Animations):
             self.text = None
         else:
             self.text = TextBox(text=text, area=(.9, .9), rect_to_be=self.rect, relative_center=(.5, .5), font=None,
-                                font_color="black", bg_color=None, groups=None)
+                                font_color="black", bg_color=None, groups=None, keep_ratio=bool)
         self.fingers_id = set()
 
     def finger_down(self, event):

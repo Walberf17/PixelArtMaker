@@ -77,6 +77,39 @@ class ColorButton(Button):
             self.on_click_up(self)
 
 
+class HelpWindow(Scene):
+    def key_up_handler(self, event):
+        if event.scancode == 58:
+            print('parando')
+            self.stop()
+
+    def create_objects(self):
+        known_btns = {
+            'o': 'Seleciona a cor do local que o mouse está. (Dentro da tela)',
+            'e': 'Ativa a borracha.',
+            'Setas': 'Movem os quadros.',
+            'Espaço': 'Exibe a primeira imagem como sombra.',
+            'Ctrl+C': 'Copia a tela atual.',
+            'Ctrl+V': 'Cola a tela copiada.',
+            'del': 'Apaga a tela inteira',
+        }
+
+        texts = list()
+        i = 0
+        size = .9 / len(known_btns)
+        for key, text in known_btns.items():
+            center_y = size*i+.5*size
+            texts.append(TextBox(text=key, area=(.2, size), rect_to_be=self.screen_rect, relative_center=[.1, center_y],
+                                 font_color="black", bg_color=None, keep_ratio=bool))
+            texts.append(TextBox(text=' ==> ' + text, area=(.8, size), rect_to_be=self.screen_rect,
+                                 relative_center=[.6, center_y], font_color="black", bg_color=None, keep_ratio=bool))
+            i+=1
+
+        dict_to_do = {
+            'draw': [texts]
+        }
+        self.set_things_to_do(dict_to_do=dict_to_do)
+
 class Manager:
     def __init__(self, rect, grid_size):
         """
@@ -132,12 +165,15 @@ class Manager:
         rows, cols = self.grid_size
         self.text_resolution = TextBox(text=f'[{rows} x {cols}]', area=[.1, .05], rect_to_be=self.rect,
                                        relative_center=[.07, .65], font_color='black', bg_color=None,
-                                       groups=[self.texts])
+                                       groups=[self.texts], keep_ratio=bool)
 
         self.marker_rows = Marker(area=[.025, .25], rect_to_be=self.rect, horizontal=False, groups=self.markers,
                                   center=[0.07 - .07 / 3, .8])
         self.marker_cols = Marker(area=[.025, .25], rect_to_be=self.rect, horizontal=False, groups=self.markers,
                                   center=[0.07 + .07 / 3, .8])
+        self.marker_animator_velocity = Marker(area=[.1, .02], rect_to_be=self.rect, horizontal=True, groups=self.markers,
+                                  center=[0.07, .32])
+
 
         self.marker_rows.set_percent((self.grid_size[0] * 2) / (self.max_resolution * 2))
         self.marker_cols.set_percent((self.grid_size[1] * 2) / (self.max_resolution * 2))
@@ -147,13 +183,15 @@ class Manager:
         self.selection_size_rect = pg.Rect([0, 0], calc_proportional_size([.025, .05], max_rect=self.rect))
 
         self.text_idx = TextBox(text='[1 , 1]', area=[.1, .05], rect_to_be=self.rect, relative_center=[.5, .05],
-                                font_color='black', bg_color=None, groups=[self.texts])
+                                font_color='black', bg_color=None, groups=[self.texts], keep_ratio=bool)
 
         self.background_func = self.get_background_image
 
         self.build()
         self.check_folder()
         self.change_resolution()
+
+        self.copied = None
 
     def build(self):
 
@@ -181,7 +219,7 @@ class Manager:
         Button(area=self.button_sizes, center=[1 - default_x_dif, .9], rect_to_be=self.rect, text=f'Sair',
                on_click_up=partial(sys.exit), groups=[self.btns])
         Button(area=self.button_sizes, center=[1 - default_x_dif, .8], rect_to_be=self.rect, text=f'Limpar',
-               on_click_up=partial(self.clear_image, [0, 0, 0, 0]), groups=[self.btns])
+               on_click_up=partial(self.clear_image), groups=[self.btns])
 
         # buttons to manage colors
         for i in range(5):
@@ -191,9 +229,9 @@ class Manager:
 
         # texts
         TextBox(text='Localização:', area=[.1, .065], rect_to_be=self.rect, relative_center=[0.35, .05],
-                font_color='black', bg_color=None, groups=[self.texts])
+                font_color='black', bg_color=None, groups=[self.texts], keep_ratio=bool)
         TextBox(text='Resolução:', area=[.1, .05], rect_to_be=self.rect, relative_center=[0.07, .55],
-                font_color='black', bg_color=None, groups=[self.texts])
+                font_color='black', bg_color=None, groups=[self.texts], keep_ratio=bool)
 
         # Eraser
         Button(text='Eraser', area=[.1, .1], center=[.75, .05], rect_to_be=self.rect, groups=[self.btns],
@@ -301,7 +339,7 @@ class Manager:
     def get_first_as_background(self):
         row, col = self.idx
         if col >= 1:
-            self.background = self.images[0][0].copy()
+            self.background = self.images[row][0].copy()
             self.background.set_alpha(70)
         else:
             self.background = None
@@ -399,7 +437,7 @@ class Manager:
         self.color_picker.update()
         self.grid.set_color(self.color_picker.get_color())
         self.grid.update()
-        self.animator.update()
+        self.animator.update(velocity=self.marker_animator_velocity.get_percent()*8)
 
     def change_resolution_text(self):
         rows = max(int((self.marker_rows.get_percent() * self.max_resolution)), 1)
@@ -427,14 +465,23 @@ class Manager:
             44: partial(self.change_background_func, self.get_first_as_background),
             5: self.active_eraser,
             76: partial(self.clear_image),
-            18: self.pick_color
+            18: self.pick_color,
+            6: partial(self.copy_surf, event),
+            25: self.paste_surf,
+            58: self.help_window,
+
         }
 
         if event.scancode in funcs:
             func = funcs.get(event.scancode)
             func()
         else:
-            print(event.scancode)
+            # print(event)
+            pass
+
+    def help_window(self):
+        helper_scene = HelpWindow(screen)
+        helper_scene.run()
 
     def change_background_func(self, background):
         self.background_func = background
@@ -443,7 +490,7 @@ class Manager:
     def key_up(self, event):
         funcs = {
             44: partial(self.change_background_func, self.get_background_image),
-            5: self.active_eraser,
+            5: self.active_eraser
         }
 
         if event.scancode in funcs:
@@ -458,9 +505,19 @@ class Manager:
             print(color)
             self.set_color(color)
 
+    def copy_surf(self, event):
+        if event.unicode == '\x03':
+            self.copied = self.grid.image.copy()
+
+    def paste_surf(self):
+        if self.copied:
+            self.grid.image.blit(self.copied, [0,0])
+        self.move_to_image()
+
 
 # runs
 screen = pg.display.set_mode(pg.display.get_desktop_sizes()[0], pg.FULLSCREEN)
+# screen = pg.display.set_mode([200,200])
 pg.display.set_caption(f'PixelArtMaker')
 screen_rect = screen.get_rect()
 app = Manager(screen_rect, [32, 32])

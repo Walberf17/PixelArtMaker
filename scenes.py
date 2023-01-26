@@ -100,12 +100,7 @@ class Scene:
         self.running = True
         clock = pg.time.Clock()
         while self.running:
-            if pg.event.peek(pg.QUIT):
-                self.quit()
-            self.event_handler()
-            self.update_handler()
-            self.move_handler()
-            self.draw_handler()
+            self.run_frame()
             pg.display.update()
             clock.tick(self.FPS)
 
@@ -123,9 +118,9 @@ class Scene:
 
     def create_objects(self):
         """
-		Change this class to create all the objects you will have in this class.
-		:return:
-		"""
+        Change this class to create all the objects you will have in this class.
+        :return:
+        """
         pass
 
     def set_things_to_do(self, dict_to_do=None):

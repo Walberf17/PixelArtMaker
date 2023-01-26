@@ -12,23 +12,24 @@ from timer import Timer
 pg.init()
 # Some Default Font
 # font_size = int(screen_rect.h / 1)
-main_menu_font = pg.font.SysFont("arial", 180, False, False)
+main_menu_font = pg.font.SysFont("arial", 200, False, False)
 
 
 class TextBox(Sprite):
     """ this will work with short sentences, 1 line only.
-	param text : string
-	param rect : pg.Rect
-	param font : pg.font.SysFont
-	param font_color : pg.color
-	param bg_color : pg.color
-	"""
+    param text : string
+    param rect : pg.Rect
+    param font : pg.font.SysFont
+    param font_color : pg.color
+    param bg_color : pg.color
+    """
 
     def __init__(self, text='', area=(1, 1), rect_to_be=None, relative_center=None, absolute_center=None,
-                 font=None, font_color="white", bg_color="black", groups=None):
+                 font=None, font_color="white", bg_color="black", groups=None, keep_ratio=True, resize_text=True):
         """
         It takes a string, a area proportion , a pg.font,
         font color and a background color
+        :param keep_ratio: bool, True if the rendered image is to keep the original ratio of the font
         :param text: str with the text to show
         :param area: list with 2 sizes from 0 to 1 to
         :param rect_to_be: pg.Rect object, where the proportion will be (1,1)
@@ -37,6 +38,7 @@ class TextBox(Sprite):
         :param bg_color: pg.Color or None
         :param groups: list, list of groups to this object to be, if any.
         """
+        self.resize_text = resize_text
         if groups is None:
             groups = []
         if type(groups) not in [set, list, tuple]:
@@ -45,6 +47,7 @@ class TextBox(Sprite):
         if font is None:
             font = main_menu_font
         self.text = text
+        self.keep_ratio = keep_ratio
         self.font = font
         self.font_color = font_color
         self.bg_color = bg_color
@@ -72,25 +75,31 @@ class TextBox(Sprite):
         new_surface.fill([0, 0, 0, 0])
         txt = self.font.render(self.text, True, self.font_color, self.bg_color)
         new_surface.blit(txt, (0, 0))
-        new_surface = pg.transform.scale(new_surface, self.rect.size)
+
+        if self.keep_ratio:
+            self.rect = new_surface.get_rect().fit(self.rect)
+        if self.resize_text:
+            new_surface = pg.transform.scale(new_surface, self.rect.size)
+        else:
+            self.rect = new_surface.get_rect()
         self.surface = new_surface
         self.center_image()
 
     def center_image(self):
         """
-		Check if the image is centered in the rect to be
-		:return:
-		"""
-        if self.relative_center is not None:
+        Check if the image is centered in the rect to be
+        :return:
+        """
+        if self.relative_center:
             self.rect.center = calc_proportional_size(self.relative_center, max_area=(1, 1),
                                                       max_rect=self.rect_to_be) + self.rect_to_be.topleft
 
     def draw(self, screen_to_draw, angle=None, alpha=None):
         """
-		Draw the text box in the given surface.
-		:param screen_to_draw: pg.Surface Object
-		:return: None
-		"""
+        Draw the text box in the given surface.
+        :param screen_to_draw: pg.Surface Object
+        :return: None
+        """
         if alpha is not None or angle is not None:
             new_surf = pg.Surface(self.rect.size).convert_alpha()
             new_surf.fill([0, 0, 0, 0])
@@ -111,21 +120,21 @@ class TextBox(Sprite):
 
     def change_text(self, new_text=''):
         """
-		Change the text of this box.
-		:param new_text: a string object
-		:return:
-		"""
+        Change the text of this box.
+        :param new_text: a string object
+        :return:
+        """
         self.text = str(new_text)
         self.line_w, self.line_h = self.font.size(str(self.text))
         self.create_image()
 
     def resize(self, new_area, rect_to_be=None):
         """
-		Resizes the rect for the new area given,
-		:param new_proportional_size:
-		:param rect_to_be:
-		:return:
-		"""
+        Resizes the rect for the new area given,
+        :param new_area:
+        :param rect_to_be:
+        :return:
+        """
         if rect_to_be is not None:
             self.rect_to_be = rect_to_be
 
@@ -137,13 +146,13 @@ class TextBox(Sprite):
 # Helpers
 def calc_proportional_size(expected=None, max_area=(1, 1), max_rect=None):
     """
-	It calculates a proportional thing to the given rect and max size, given in units.
-	The max size is the proportion, max size of the rect, in units.
-	:param expected: a list or tuple with the size in meters
-	:param max_area: a list with the max are of the thing that you want to compare
-	:param max_rect: pygame.Rect, the rect that you want to compare
-	:return:
-	"""
+    It calculates a proportional thing to the given rect and max size, given in units.
+    The max size is the proportion, max size of the rect, in units.
+    :param expected: a list or tuple with the size in meters
+    :param max_area: a list with the max are of the thing that you want to compare
+    :param max_rect: pygame.Rect, the rect that you want to compare
+    :return:
+    """
     if max_rect is None:
         raise EOFError(f'Max rect not found')
     max_sizes = pg.Vector2(max_rect.size)
