@@ -77,6 +77,18 @@ class ColorButton(Button):
             self.on_click_up(self)
 
 
+class ToolButton(Button):
+    def do_action(self, on_click_down=True):
+        """
+        Do whatever the action set to do.
+        :return: None
+        """
+        if on_click_down and self.on_click_down:
+            self.on_click_down(self)
+        elif (not on_click_down) and self.on_click_up:
+            self.on_click_up(self)
+
+
 class HelpWindow(Scene):
     def key_up_handler(self, event):
         if event.scancode == 58:
@@ -131,6 +143,10 @@ class Manager:
                   'size': [32, 32]},
             '7': {'address': 'Vertical Mirror 32x32.png',
                   'size': [32, 32]},
+            '8': {'address': 'horizontal mirror 17x16.png',
+                  'size': [17, 16]},
+            '9': {'address': 'full mirror 17x17.png',
+                  'size': [17, 16]},
 
         }
 
@@ -185,7 +201,7 @@ class Manager:
 
         self.change_resolution_text()
 
-        self.selection_size_rect = pg.Rect([0, 0], calc_proportional_size([.025, .05], max_rect=self.rect))
+        self.selection_size_rect = pg.Rect([0, 0], calc_proportional_size([.03, .06], max_rect=self.rect))
 
         self.text_idx = TextBox(text='[1 , 1]', area=[.1, .05], rect_to_be=self.rect, relative_center=[.5, .05],
                                 font_color='black', bg_color=None, groups=[self.texts], resize_text=True,
@@ -199,8 +215,20 @@ class Manager:
 
         self.copied = None
 
+    ####################### Build things #######################
     def build(self):
+        """
+        build the objects for controlling the things
+        :return:
+        """
+        self.build_btns_idx()
+        self.build_btns_managers()
 
+        self.build_texts()
+        self.build_btns_tools()
+
+
+    def build_btns_idx(self):
         # Buttons to change the index
         w, h = .3, .3
         default_x_dif = .05
@@ -218,62 +246,103 @@ class Manager:
         Button(area=[w, h], center=center - [0, h], rect_to_be=default_rect, text=f'/\\',
                on_click_up=partial(self.move_to_image, -1, 0), groups=[self.btns])
 
+    def build_btns_managers(self):
         # Buttons to manage things
         Button(area=self.button_sizes, center=[.07, .05], rect_to_be=self.rect, text=f'Salvar',
                on_click_up=partial(self.save_image), groups=[self.btns], image='4',
                dict_with_images=self.dict_with_images)
-        Button(area=self.button_sizes, center=[1 - default_x_dif, .9], rect_to_be=self.rect, text=f'Sair',
+        Button(area=self.button_sizes, center=[.95, .9], rect_to_be=self.rect, text=f'Sair',
                on_click_up=partial(sys.exit), groups=[self.btns])
-        Button(area=self.button_sizes, center=[1 - default_x_dif, .8], rect_to_be=self.rect, text=f'Limpar',
+        Button(area=self.button_sizes, center=[.95, .8], rect_to_be=self.rect, text=f'Limpar',
                on_click_up=partial(self.clear_image), groups=[self.btns])
 
-        # buttons to manage colors
-        for i in range(5):
-            self.pallet.append(ColorButton(area=[w, h], center=center + [0, h * (i + 3)], rect_to_be=default_rect,
-                                           on_click_up=self.change_btn_color,
-                                           groups=[self.btns], colors=['black'] * 3))
+    def build_btns_tools(self):
+        """
+        This build the buttons used as tools for painting
+        :return:
+        """
+        total_lines = 3
+        total_cols = 3
+        line_size = [1, 1/total_lines]
 
+        # the full rect
+        tools_rect = pg.Rect([0,0], calc_proportional_size([.1, .18], max_rect=self.rect))
+        tools_rect.center = calc_proportional_size([.07, .4], max_rect=self.rect)
+
+        # for each line (3 for now
+        first_line = pg.Rect([0,0] , calc_proportional_size(line_size, max_rect=tools_rect))
+        first_line.center = calc_proportional_size([.5, 1/total_lines], max_rect=tools_rect)+tools_rect.topleft
+
+        second_line = pg.Rect([0, 0], calc_proportional_size(line_size, max_rect=tools_rect))
+        second_line.center = calc_proportional_size([.5, 2 / total_lines], max_rect=tools_rect)+tools_rect.topleft
+
+        third_line = pg.Rect([0, 0], calc_proportional_size(line_size, max_rect=tools_rect))
+        third_line.center = calc_proportional_size([.5, 3 / total_lines], max_rect=tools_rect)+tools_rect.topleft
+
+        area = pg.Vector2([1/total_cols, 1])-[.1,0.1]
+        center = pg.Vector2([.5, .5])
+        diff = [.25,0]
+
+        # for the first line
+        ToolButton(image='1', area=area, center=center-diff, rect_to_be=first_line, groups=[self.btns],
+               on_click_up=partial(self.set_pen_size, 1), dict_with_images=self.dict_with_images).do_action(on_click_down=False)
+        ToolButton(image='2', area=area, center=center, rect_to_be=first_line, groups=[self.btns],
+               on_click_up=partial(self.set_pen_size, 4), dict_with_images=self.dict_with_images)
+        ToolButton(image='3', area=area, center=center + diff, rect_to_be=first_line, groups=[self.btns],
+               on_click_up=partial(self.set_pen_size, 8), dict_with_images=self.dict_with_images)
+
+        # for the second line
+        ToolButton(area=area, center=center, rect_to_be=second_line, text=f'Balde',
+               on_click_up=partial(self.set_pen_size, 'color'), groups=[self.btns], image='6',
+               dict_with_images=self.dict_with_images)
+
+        # self.selection_size_rect.center = calc_proportional_size(center - (area.x, 0), max_rect=self.rect)
+
+        # for the third line
+        ToolButton(area=area, center=center - diff, rect_to_be=third_line, text=f'Es. V',
+               on_click_up=partial(self.set_pen_size, 'mirror vertical'), groups=[self.btns], image='7',
+               dict_with_images=self.dict_with_images)
+
+        ToolButton(area=area, center=center, rect_to_be=third_line, text=f'Es. H',
+                   on_click_up=partial(self.set_pen_size, 'mirror horizontal'), groups=[self.btns], image='8',
+                   dict_with_images=self.dict_with_images)
+
+        ToolButton(area=area, center=center+diff, rect_to_be=third_line, text=f'Es. F',
+                   on_click_up=partial(self.set_pen_size, 'mirror full'), groups=[self.btns], image='9',
+                   dict_with_images=self.dict_with_images)
+
+        # The Eraser
+        Button(text='Eraser', area=[.1, .1], center=[.75, .05], rect_to_be=self.rect, groups=[self.btns],
+               on_click_up=partial(self.active_eraser))
+
+    def build_texts(self):
         # texts
         TextBox(text='Localização:', area=[.1, .065], rect_to_be=self.rect, relative_center=[0.35, .05],
                 font_color='black', bg_color=None, groups=[self.texts])
         TextBox(text='Resolução:', area=[.1, .05], rect_to_be=self.rect, relative_center=[0.07, .55],
                 font_color='black', bg_color=None, groups=[self.texts])
 
-        # Eraser
-        Button(text='Eraser', area=[.1, .1], center=[.75, .05], rect_to_be=self.rect, groups=[self.btns],
-               on_click_up=partial(self.active_eraser))
 
-        ## for pen size
-        area = pg.Vector2([.025, .05])
-        center = pg.Vector2([.07, .4])
-        Button(image='1', area=area, center=center - (area.x, 0), rect_to_be=self.rect, groups=[self.btns],
-               on_click_up=partial(self.set_pen_size, 1), dict_with_images=self.dict_with_images)
-        Button(image='2', area=area, center=center, rect_to_be=self.rect, groups=[self.btns],
-               on_click_up=partial(self.set_pen_size, 4), dict_with_images=self.dict_with_images)
-        Button(image='3', area=area, center=center + (area.x, 0), rect_to_be=self.rect, groups=[self.btns],
-               on_click_up=partial(self.set_pen_size, 8), dict_with_images=self.dict_with_images)
-        Button(area=area, center=center + (-area.x, area.y), rect_to_be=self.rect, text=f'Balde',
-               on_click_up=partial(self.set_pen_size, 'color'), groups=[self.btns], image='6',
-               dict_with_images=self.dict_with_images)
-        Button(area=area, center=center + (area.x, area.y), rect_to_be=self.rect, text=f'Es. V',
-               on_click_up=partial(self.set_pen_size, 'mirror vertical'), groups=[self.btns], image='7',
-               dict_with_images=self.dict_with_images)
-        self.selection_size_rect.center = calc_proportional_size(center - (area.x, 0), max_rect=self.rect)
 
-    def set_pen_size(self, n):
+    ####################### Manage Files #######################
+    ""
+    ####################### Helpers #######################
+
+
+    def set_pen_size(self, n , btn):
         funcs_dict = {
-            1: [self.grid.get_1_neighborhood, [.07 - 0.025, .4]],
-            4: [self.grid.get_4_neighborhood, [.07, .4]],
-            8: [self.grid.get_8_neighborhood, [.07 + 0.025, .4]],
-            'color': [self.grid.get_same_color_neighborhood, [.07 - 0.025, .45]],
-            'mirror horizontal': [self.grid.get_mirror_horizon, [.07, .45]],
-            'mirror vertical': [self.grid.get_mirror_vertical, [.07 + 0.025, .45]],
-            'mirror full': [self.grid.get_mirror_full, [.07 - 0.025, .5]],
-
+            1: self.grid.get_1_neighborhood,
+            4: self.grid.get_4_neighborhood,
+            8: self.grid.get_8_neighborhood,
+            'color': self.grid.get_same_color_neighborhood,
+            'mirror horizontal': self.grid.get_mirror_horizon,
+            'mirror vertical': self.grid.get_mirror_vertical,
+            'mirror full': self.grid.get_mirror_full,
         }
-        func, center = funcs_dict.get(n, self.grid.get_1_neighborhood)
+        func = funcs_dict.get(n, self.grid.get_1_neighborhood)
         self.grid.set_pen_size(func)
-        self.selection_size_rect.center = calc_proportional_size(center, max_rect=self.rect)
+        self.selection_size_rect.size = calc_proportional_size([1.1, 1.1], max_rect=btn.rect)
+        self.selection_size_rect.center = btn.rect.center
 
     def change_btn_color(self, btn):
         color = btn.color
@@ -287,15 +356,10 @@ class Manager:
             self.color_picker.color = [0, 0, 0, 0]
 
     def set_color(self, color):
-        if color in [[0, 0, 0, 0], (0, 0, 0, 0)]:
-            return
         self.color_picker.set_color(color)
-        if color not in self.colors:
+        if color not in [[0, 0, 0, 0], (0, 0, 0, 0)]:
             self.colors.insert(0, color)
             self.colors.pop()
-            for btn, color in zip(self.pallet, self.colors):
-                btn.colors = [color] * 3
-                btn.color = color
 
     def check_folder(self):
         os.makedirs(self.saving_folder, exist_ok=True)
@@ -495,14 +559,16 @@ class Manager:
             6: partial(self.copy_surf, event),
             25: self.paste_surf,
             58: self.help_window,
-            8: partial(self.set_pen_size, 'mirror vertical'),
+            # 8: partial(self.set_pen_size, 'mirror horizontal'),
+            41: sys.exit,
+
         }
 
         if event.scancode in funcs:
             func = funcs.get(event.scancode)
             func()
         else:
-            print(event)
+            # print(event)
             pass
 
     def help_window(self):
@@ -517,7 +583,6 @@ class Manager:
         funcs = {
             44: partial(self.change_background_func, self.get_background_image),
             5: self.active_eraser,
-            8: partial(self.set_pen_size, 1),
         }
 
         if event.scancode in funcs:
@@ -538,16 +603,15 @@ class Manager:
 
     def paste_surf(self):
         if self.copied:
-            self.grid.image.blit(self.copied, [0, 0])
+            self.grid.image.blit(pg.transform.scale(self.copied, self.grid.rect.size), [0, 0])
         self.move_to_image()
 
 
 # runs
 screen = pg.display.set_mode(pg.display.get_desktop_sizes()[0], pg.FULLSCREEN)
-# screen = pg.display.set_mode([200,200])
 pg.display.set_caption(f'PixelArtMaker')
 screen_rect = screen.get_rect()
-app = Manager(screen_rect, [2, 1])
+app = Manager(screen_rect, [16, 16])
 scene = Scene(screen,
               {'draw': [[app]], 'click_down': [[app]], 'update': [[app]], 'key_down': [[app]], 'key_up': [[app]]},
               fps=60)
