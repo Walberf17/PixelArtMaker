@@ -126,11 +126,13 @@ class HelpWindow(Scene):
 class Manager:
     def __init__(self, rect, grid_size):
         """
-        Manage the images created, load and save then in the specified format
+        It creates the main app, given the rect it should occupy and the size of the image(width, height)
+        :param rect: pg.Rect
+        :param grid_size: list(int, int)
         """
 
-        # dict with images
-
+        ####################### Variables #######################
+        # Files
         self.dict_with_images = {
             'path': 'Images',
             '1': {'address': 'size1.png'},
@@ -149,71 +151,74 @@ class Manager:
                   'size': [17, 16]},
 
         }
-
         self.saving_folder = os.path.join('.', 'Images', 'Sprites')
-        self.images = list()  # a list of list, each list is a sprite(pg.Surface), different list mean different
-        # sprites actions
+
+        # Constants
         self.button_sizes = [.05, 0.05]
         self.max_resolution = 64
-        self.grid_size = grid_size
+        self.rect = rect
+        self.bg_for_grid = pg.image.load(os.path.join('Images', 'transparent_bg.jpg'))
 
-        # groups
-        self.btns = pg.sprite.Group()
-        self.texts = pg.sprite.Group()
+
+        # Variables
+        self.idx = [0, 0]
+        self.grid_size = grid_size
+        self.colors = ['black'] * 3
+        self.background_func = self.get_background_image
+        self.copied = None
+        self.background = None
+
+        # Groups, sets and things
+        self.images = list()
+        self.images.append(list())
 
         self.markers = set()
-        self.grid = DrawingGrid(area=(.75, .9), grid_size=self.grid_size, rect_to_be=screen_rect,
-                                background=[0, 0, 0, 0], center=[.5, .55])
-        self.images.append(list())
-        self.images[0].append(self.grid.get_image())
-        self.background = None
-        self.idx = [0, 0]
-        self.rect = rect
 
-        self.colors = ['black'] * 5
-        self.pallet = list()
-
-        self.animator = Animations(fps=45, area=[.1, .2], center=[.07, .2], rect_to_be=self.rect, color=[0, 0, 0, 0])
-
-        # groups
         self.btns = Group()
         self.texts = Group()
 
-        # color picker
-        self.color_picker = ColorSelector([.85, 0, .1, .1], [0, .0, 1, 1], self.rect)
-        self.bg_for_grid = pg.image.load(os.path.join('Images', 'transparent_bg.jpg'))
 
-        rows, cols = self.grid_size
-        self.text_resolution = TextBox(text=f'[{rows} x {cols}]', area=[.1, .05], rect_to_be=self.rect,
-                                       relative_center=[.07, .65], font_color='black', bg_color=None,
-                                       groups=[self.texts])
 
-        self.marker_rows = Marker(area=[.025, .25], rect_to_be=self.rect, horizontal=False, groups=self.markers,
-                                  center=[0.07 - .07 / 3, .8])
-        self.marker_cols = Marker(area=[.025, .25], rect_to_be=self.rect, horizontal=False, groups=self.markers,
-                                  center=[0.07 + .07 / 3, .8])
+        ####################### Objects #######################
+        self.grid = DrawingGrid(area=(.75, .9), grid_size=self.grid_size, rect_to_be=screen_rect,
+                                background=[0, 0, 0, 0], center=[.5, .55])
+
+        self.animator = Animations(fps=45, area=[.1, .2], center=[.07, .2], rect_to_be=self.rect, color=[0, 0, 0, 0])
         self.marker_animator_velocity = Marker(area=[.1, .02], rect_to_be=self.rect, horizontal=True,
                                                groups=self.markers,
                                                center=[0.07, .32])
 
+        self.color_picker = ColorSelector([.85, 0, .1, .1], [0, .0, 1, 1], self.rect)
+
+        # Resolution - Grid Size
+        width, height = self.grid_size
+        self.text_resolution = TextBox(text=f'[{width} x {height}]', area=[.1, .05], rect_to_be=self.rect,
+                                       relative_center=[.07, .65], font_color='black', bg_color=None,
+                                       groups=[self.texts])
+        ## Markers
+        self.marker_rows = Marker(area=[.025, .25], rect_to_be=self.rect, horizontal=False, groups=self.markers,
+                                  center=[0.07 - .07 / 3, .8])
         self.marker_rows.set_percent((self.grid_size[0] * 2) / (self.max_resolution * 2))
+
+        self.marker_cols = Marker(area=[.025, .25], rect_to_be=self.rect, horizontal=False, groups=self.markers,
+                                  center=[0.07 + .07 / 3, .8])
         self.marker_cols.set_percent((self.grid_size[1] * 2) / (self.max_resolution * 2))
 
-        self.change_resolution_text()
-
-        self.selection_size_rect = pg.Rect([0, 0], calc_proportional_size([.03, .06], max_rect=self.rect))
-
+        # Location
         self.text_idx = TextBox(text='[1 , 1]', area=[.1, .05], rect_to_be=self.rect, relative_center=[.5, .05],
                                 font_color='black', bg_color=None, groups=[self.texts], resize_text=True,
                                 keep_ratio=True)
 
-        self.background_func = self.get_background_image
+        # Tools Selection
+        self.selection_size_rect = pg.Rect([0, 0], calc_proportional_size([.03, .06], max_rect=self.rect))
 
+        ####################### Calls #######################
+        self.images[0].append(self.grid.get_image())
+        self.change_resolution_text()
         self.build()
         self.check_folder()
         self.change_resolution()
 
-        self.copied = None
 
     ####################### Build things #######################
     def build(self):
@@ -226,7 +231,6 @@ class Manager:
 
         self.build_texts()
         self.build_btns_tools()
-
 
     def build_btns_idx(self):
         # Buttons to change the index
@@ -325,11 +329,31 @@ class Manager:
 
 
     ####################### Manage Files #######################
-    ""
-    ####################### Helpers #######################
+    def save_image(self):
+        self.move_to_image()
+        max_sprites = self.get_max_sprites()
+        grid_size = self.grid_size
+        full_size = pg.Vector2(grid_size).elementwise() * [max_sprites, len(self.images)]
+        full_surf = pg.Surface(full_size).convert_alpha()
+        full_surf.fill([0, 0, 0, 0])
+        pos_0 = pg.Vector2(grid_size)
+        for row, sprite in enumerate(self.images):
+            for col, image in enumerate(sprite):
+                new_pos = pos_0.elementwise() * [col, row]
+                new_surf = pg.transform.scale(image, grid_size)
+                full_surf.blit(new_surf, new_pos)
+
+        # name = input("Choose a name: ")
+        name = 'tests'
+        path = os.path.join(self.saving_folder, f'{name} {grid_size[0]}x{grid_size[1]}.png')
+        pg.image.save(full_surf, path)
 
 
-    def set_pen_size(self, n , btn):
+    def check_folder(self):
+        os.makedirs(self.saving_folder, exist_ok=True)
+
+    ####################### Tools and stuff #######################
+    def set_pen_size(self, n, btn):
         funcs_dict = {
             1: self.grid.get_1_neighborhood,
             4: self.grid.get_4_neighborhood,
@@ -361,28 +385,33 @@ class Manager:
             self.colors.insert(0, color)
             self.colors.pop()
 
-    def check_folder(self):
-        os.makedirs(self.saving_folder, exist_ok=True)
-
-    def save_image(self):
+    def clear_image(self):
+        image, frame = self.idx
+        self.grid.image.fill([0, 0, 0, 0])
         self.move_to_image()
-        max_sprites = self.get_max_sprites()
-        grid_size = self.grid_size
-        full_size = pg.Vector2(grid_size).elementwise() * [max_sprites, len(self.images)]
-        full_surf = pg.Surface(full_size).convert_alpha()
-        full_surf.fill([0, 0, 0, 0])
-        pos_0 = pg.Vector2(grid_size)
-        for row, sprite in enumerate(self.images):
-            for col, image in enumerate(sprite):
-                new_pos = pos_0.elementwise() * [col, row]
-                new_surf = pg.transform.scale(image, grid_size)
-                full_surf.blit(new_surf, new_pos)
 
-        # name = input("Choose a name: ")
-        name = 'tests'
-        path = os.path.join(self.saving_folder, f'{name} {grid_size[0]}x{grid_size[1]}.png')
-        pg.image.save(full_surf, path)
+    def bucket(self):
+        self.grid.bucket()
+        self.move_to_image()
 
+    def pick_color(self):
+        pos = pg.Vector2(pg.mouse.get_pos())
+        if self.grid.rect.collidepoint(pos):
+            pos -= self.grid.rect.topleft
+            color = self.grid.image.get_at([int(pos.x), int(pos.y)])
+            print(color)
+            self.set_color(color)
+
+    def copy_surf(self, event):
+        if event.unicode == '\x03':
+            self.copied = self.grid.image.copy()
+
+    def paste_surf(self):
+        if self.copied:
+            self.grid.image.blit(pg.transform.scale(self.copied, self.grid.rect.size), [0, 0])
+        self.move_to_image()
+
+    ####################### Screen Manager #######################
     def animate_animator(self):
         max_sprites = len(self.images[self.idx[0]])
         grid_size = self.grid_size
@@ -405,11 +434,132 @@ class Manager:
         }
         self.animator.define_images(17121990, dict_with_images)
 
+    def change_resolution_text(self):
+        width = max(int((self.marker_rows.get_percent() * self.max_resolution)), 1)
+        height = max(int((self.marker_cols.get_percent() * self.max_resolution)), 1)
+        self.text_resolution.change_text(new_text=f'[{width} x {height}]')
+
+
+    def change_resolution(self):
+        width = max(int((self.marker_rows.get_percent() * self.max_resolution)), 1)
+        height = max(int((self.marker_cols.get_percent() * self.max_resolution)), 1)
+        self.grid_size = [width, height]
+        self.grid.change_size([height, width])
+        self.change_resolution_text()
+        self.move_to_image()
+        self.get_background_image()
+        self.background_func()
+
+    ####################### Handlers #######################
+
+    def click_down(self, event):
+        for btn in self.btns:
+            if btn.click_down(event):
+                return True
+
+        for marker in self.markers:
+            if marker.click_down(event):
+                return True
+
+        self.grid.click_down(event)
+
+        if self.color_picker.click_down(event):
+            return True
+
+    def click_up(self, event):
+        for btn in self.btns:
+            btn.click_up(event)
+
+        for marker in self.markers:
+            if marker.click_up(event):
+                self.change_resolution()
+        if self.grid.click_up(event):
+            self.move_to_image()
+        if self.color_picker.click_up(event):
+            color = self.color_picker.get_color()
+            self.set_color(color)
+
+    def key_down(self, event):
+        funcs = {
+            79: partial(self.move_to_image, 0, 1),
+            80: partial(self.move_to_image, 0, -1),
+            81: partial(self.move_to_image, 1, 0),
+            82: partial(self.move_to_image, -1, 0),
+            44: partial(self.change_background_func, self.get_first_as_background),
+            5: self.active_eraser,
+            76: partial(self.clear_image),
+            18: self.pick_color,
+            6: partial(self.copy_surf, event),
+            25: self.paste_surf,
+            58: self.help_window,
+            # 8: partial(self.set_pen_size, 'mirror horizontal'),
+            41: sys.exit,
+
+        }
+
+        if event.scancode in funcs:
+            func = funcs.get(event.scancode)
+            func()
+        else:
+            # print(event)
+            pass
+
+    def key_up(self, event):
+        funcs = {
+            44: partial(self.change_background_func, self.get_background_image),
+            5: self.active_eraser,
+        }
+
+        if event.scancode in funcs:
+            func = funcs.get(event.scancode)
+            func()
+    def draw(self, screen_to_draw):
+
+        screen_to_draw.blit(self.bg_for_grid, self.grid.rect, self.grid.rect)
+        screen_to_draw.blit(self.bg_for_grid, self.animator.rect, self.animator.rect)
+        pg.draw.rect(screen_to_draw, 'white', self.selection_size_rect)
+        # pg.draw.rect(screen_to_draw, 'white', self.grid.rect)
+
+        self.grid.draw(screen_to_draw)
+
+        for btn in self.btns:
+            btn.draw(screen_to_draw)
+
+        for text in self.texts:
+            text.draw(screen_to_draw)
+
+        for btn in self.markers:
+            btn.draw(screen_to_draw)
+
+        if self.background:
+            screen_to_draw.blit(self.background, self.grid.rect.topleft)
+
+        self.color_picker.draw(screen_to_draw)
+        self.animator.draw(screen_to_draw=screen_to_draw)
+
+    def update(self):
+        for btn in self.btns:
+            btn.update()
+        for marker in self.markers:
+            marker.update()
+            if marker.clicked:
+                self.change_resolution_text()
+        self.color_picker.update()
+        self.grid.set_color(self.color_picker.get_color())
+        self.grid.update()
+        self.animator.update(velocity=self.marker_animator_velocity.get_percent() * 8)
+
+    ####################### Helpers #######################
+
     def get_max_sprites(self):
         max_sprites = float('-inf')
         for sprite in self.images:
             max_sprites = max([max_sprites, len(sprite)])
         return max_sprites
+
+    def change_background_func(self, background):
+        self.background_func = background
+        self.background_func()
 
     def get_background_image(self):
         row, col = self.idx
@@ -459,152 +609,51 @@ class Manager:
         self.text_idx.change_text(f'[{new_row + 1} , {new_col + 1}]')
         self.animate_animator()
 
-    def click_down(self, event):
-        for btn in self.btns:
-            if btn.click_down(event):
-                return True
-
-        for marker in self.markers:
-            if marker.click_down(event):
-                return True
-
-        self.grid.click_down(event)
-
-        if self.color_picker.click_down(event):
-            return True
-
-    def click_up(self, event):
-        for btn in self.btns:
-            btn.click_up(event)
-
-        for marker in self.markers:
-            if marker.click_up(event):
-                self.change_resolution()
-        if self.grid.click_up(event):
-            self.move_to_image()
-        if self.color_picker.click_up(event):
-            color = self.color_picker.get_color()
-            self.set_color(color)
-
-    def draw(self, screen_to_draw):
-
-        screen_to_draw.blit(self.bg_for_grid, self.grid.rect, self.grid.rect)
-        screen_to_draw.blit(self.bg_for_grid, self.animator.rect, self.animator.rect)
-        pg.draw.rect(screen_to_draw, 'white', self.selection_size_rect)
-        # pg.draw.rect(screen_to_draw, 'white', self.grid.rect)
-
-        self.grid.draw(screen_to_draw)
-
-        for btn in self.btns:
-            btn.draw(screen_to_draw)
-
-        for text in self.texts:
-            text.draw(screen_to_draw)
-
-        for btn in self.markers:
-            btn.draw(screen_to_draw)
-
-        if self.background:
-            screen_to_draw.blit(self.background, self.grid.rect.topleft)
-
-        self.color_picker.draw(screen_to_draw)
-        self.animator.draw(screen_to_draw=screen_to_draw)
-
-    def update(self):
-        for btn in self.btns:
-            btn.update()
-        for marker in self.markers:
-            marker.update()
-            if marker.clicked:
-                self.change_resolution_text()
-        self.color_picker.update()
-        self.grid.set_color(self.color_picker.get_color())
-        self.grid.update()
-        self.animator.update(velocity=self.marker_animator_velocity.get_percent() * 8)
-
-    def change_resolution_text(self):
-        width = max(int((self.marker_rows.get_percent() * self.max_resolution)), 1)
-        height = max(int((self.marker_cols.get_percent() * self.max_resolution)), 1)
-        self.text_resolution.change_text(new_text=f'[{width} x {height}]')
-
-    def change_resolution(self):
-        width = max(int((self.marker_rows.get_percent() * self.max_resolution)), 1)
-        height = max(int((self.marker_cols.get_percent() * self.max_resolution)), 1)
-        self.grid_size = [width, height]
-        self.grid.change_size([height, width])
-        self.change_resolution_text()
-        self.move_to_image()
-        self.get_background_image()
-        self.background_func()
-
-    def clear_image(self):
-        image, frame = self.idx
-        self.grid.image.fill([0, 0, 0, 0])
-        self.move_to_image()
-
-    def bucket(self):
-        self.grid.bucket()
-        self.move_to_image()
-
-    def key_down(self, event):
-        funcs = {
-            79: partial(self.move_to_image, 0, 1),
-            80: partial(self.move_to_image, 0, -1),
-            81: partial(self.move_to_image, 1, 0),
-            82: partial(self.move_to_image, -1, 0),
-            44: partial(self.change_background_func, self.get_first_as_background),
-            5: self.active_eraser,
-            76: partial(self.clear_image),
-            18: self.pick_color,
-            6: partial(self.copy_surf, event),
-            25: self.paste_surf,
-            58: self.help_window,
-            # 8: partial(self.set_pen_size, 'mirror horizontal'),
-            41: sys.exit,
-
-        }
-
-        if event.scancode in funcs:
-            func = funcs.get(event.scancode)
-            func()
-        else:
-            # print(event)
-            pass
-
     def help_window(self):
         helper_scene = HelpWindow(screen)
         helper_scene.run()
 
-    def change_background_func(self, background):
-        self.background_func = background
-        self.background_func()
 
-    def key_up(self, event):
-        funcs = {
-            44: partial(self.change_background_func, self.get_background_image),
-            5: self.active_eraser,
-        }
 
-        if event.scancode in funcs:
-            func = funcs.get(event.scancode)
-            func()
 
-    def pick_color(self):
-        pos = pg.Vector2(pg.mouse.get_pos())
-        if self.grid.rect.collidepoint(pos):
-            pos -= self.grid.rect.topleft
-            color = self.grid.image.get_at([int(pos.x), int(pos.y)])
-            print(color)
-            self.set_color(color)
 
-    def copy_surf(self, event):
-        if event.unicode == '\x03':
-            self.copied = self.grid.image.copy()
 
-    def paste_surf(self):
-        if self.copied:
-            self.grid.image.blit(pg.transform.scale(self.copied, self.grid.rect.size), [0, 0])
-        self.move_to_image()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 # runs
