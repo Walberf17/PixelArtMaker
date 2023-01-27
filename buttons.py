@@ -12,8 +12,7 @@ from textbox import TextBox
 
 class Button(Animations):
     def __init__(self, area=(1, 1), center=None, rect_to_be=None, image: str = None, text=None, dict_with_images=None,
-                 on_click_down=None,
-                 on_click_up=None, colors=None, groups=None):
+                 on_click_down=None, on_click_up=None, colors=None, groups=None, **kwargs):
         """
         It creates a rect in the screen, and does a action when interacted. If calls update, when hoovered it slightly
         change the color.
@@ -31,7 +30,7 @@ class Button(Animations):
         if colors is None:
             colors = ['orange', 'orange4', 'orange2']
         Animations.__init__(self, area=area, color=colors[0], rect_to_be=rect_to_be, image_name=image, center=center,
-                            groups=groups, dict_with_images=dict_with_images)
+                            groups=groups, dict_with_images=dict_with_images, **kwargs)
         self.on_click_down = on_click_down
         self.image = image
         self.clicked = False
@@ -41,7 +40,7 @@ class Button(Animations):
             self.text = None
         else:
             self.text = TextBox(text=text, area=(.9, .9), rect_to_be=self.rect, relative_center=(.5, .5), font=None,
-                                font_color="black", bg_color=None, groups=None, keep_ratio=True, resize_text=True)
+                                font_color="black", bg_color=None, groups=None, **kwargs)
         self.fingers_id = set()
 
     def finger_down(self, event):

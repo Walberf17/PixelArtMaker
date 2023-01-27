@@ -300,7 +300,6 @@ class Manager:
                on_click_up=partial(self.set_pen_size, 'color'), groups=[self.btns], image='6',
                dict_with_images=self.dict_with_images)
 
-        # self.selection_size_rect.center = calc_proportional_size(center - (area.x, 0), max_rect=self.rect)
 
         # for the third line
         ToolButton(area=area, center=center - diff, rect_to_be=third_line, text=f'Es. V',
@@ -316,8 +315,8 @@ class Manager:
                    dict_with_images=self.dict_with_images)
 
         # The Eraser
-        Button(text='Eraser', area=[.1, .1], center=[.75, .05], rect_to_be=self.rect, groups=[self.btns],
-               on_click_up=partial(self.active_eraser))
+        Button(text='Borracha', area=[.1, .1], center=[.75, .05], rect_to_be=self.rect, groups=[self.btns],
+               on_click_up=partial(self.active_eraser), keep_ratio=True, colors=['white']*3)
 
     def build_texts(self):
         # texts
