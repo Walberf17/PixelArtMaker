@@ -303,7 +303,7 @@ class Manager:
     def save_image(self):
         self.move_to_image()
         max_sprites = self.get_max_sprites()
-        grid_size = self.grid_size[::-1]
+        grid_size = self.grid_size
         full_size = pg.Vector2(grid_size).elementwise() * [max_sprites, len(self.images)]
         full_surf = pg.Surface(full_size).convert_alpha()
         full_surf.fill([0, 0, 0, 0])
@@ -321,7 +321,7 @@ class Manager:
 
     def animate_animator(self):
         max_sprites = len(self.images[self.idx[0]])
-        grid_size = self.grid_size[::-1]
+        grid_size = self.grid_size
         full_size = pg.Vector2(grid_size).elementwise() * [max_sprites, 1]
         full_surf = pg.Surface(full_size).convert_alpha()
         full_surf.fill([0, 0, 0, 0])
@@ -350,7 +350,7 @@ class Manager:
     def get_background_image(self):
         row, col = self.idx
         if col >= 1:
-            self.background = self.images[row][col - 1].copy()
+            self.background = pg.transform.scale(self.images[row][col - 1], self.grid.rect.size)
             self.background.set_alpha(70)
         else:
             self.background = None
@@ -358,7 +358,7 @@ class Manager:
     def get_first_as_background(self):
         row, col = self.idx
         if col >= 1:
-            self.background = self.images[row][0].copy()
+            self.background = pg.transform.scale(self.images[row][0], self.grid.rect.size)
             self.background.set_alpha(70)
         else:
             self.background = None
@@ -459,15 +459,15 @@ class Manager:
         self.animator.update(velocity=self.marker_animator_velocity.get_percent() * 8)
 
     def change_resolution_text(self):
-        rows = max(int((self.marker_rows.get_percent() * self.max_resolution)), 1)
-        cols = max(int((self.marker_cols.get_percent() * self.max_resolution)), 1)
-        self.text_resolution.change_text(new_text=f'[{rows} x {cols}]')
+        width = max(int((self.marker_rows.get_percent() * self.max_resolution)), 1)
+        height = max(int((self.marker_cols.get_percent() * self.max_resolution)), 1)
+        self.text_resolution.change_text(new_text=f'[{width} x {height}]')
 
     def change_resolution(self):
-        rows = max(int((self.marker_rows.get_percent() * self.max_resolution)), 1)
-        cols = max(int((self.marker_cols.get_percent() * self.max_resolution)), 1)
-        self.grid_size = [rows, cols]
-        self.grid.change_size([rows, cols])
+        width = max(int((self.marker_rows.get_percent() * self.max_resolution)), 1)
+        height = max(int((self.marker_cols.get_percent() * self.max_resolution)), 1)
+        self.grid_size = [width, height]
+        self.grid.change_size([height, width])
         self.change_resolution_text()
         self.move_to_image()
         self.get_background_image()

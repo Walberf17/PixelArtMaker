@@ -75,6 +75,8 @@ class DrawingGrid(Sprite):
 
         self.build()
 
+
+    ####################### Structure of things #######################
     def change_size(self, new_size):
         self.grid_size = new_size
         max_rect = pg.Rect([0, 0], calc_proportional_size(self.area, max_area=[1, 1], max_rect=self.rect_to_be))
@@ -85,9 +87,6 @@ class DrawingGrid(Sprite):
         new_rect.center = calc_proportional_size(self.center, max_rect=self.rect_to_be)
         self.rect = new_rect
         self.load_image(self.image)
-
-    def fill(self, color):
-        self.image.fill(color)
 
     def build(self):
         """
@@ -105,132 +104,24 @@ class DrawingGrid(Sprite):
         size = self.cells_size
         return pg.Rect(pos, size)
 
-    def draw(self, screen_to_draw):
-        """
-        Drow a thin black rect and the rect with its color
-        :param screen_to_draw: pg.Screen Object
-        :return:
-        """
-        screen_to_draw.blit(self.image, self.rect.topleft)
-
-        for btn in self.buttons:
-            btn.draw(screen_to_draw)
-
-        # draw the lines and columns
-        rows, cols = self.grid_size
-        ## columns
-        for col in range(cols + 1):
-            pos_0 = [self.cells_size[0] * col + self.rect.left, self.rect.top]
-            pos_1 = [self.cells_size[0] * col + self.rect.left, self.rect.bottom]
-            pg.draw.line(surface=screen_to_draw, color='gray', start_pos=pos_0, end_pos=pos_1, width=3)
-
-        ## rows
-        for row in range(rows + 1):
-            pos_0 = [self.rect.left, self.rect.top + self.cells_size[1] * row]
-            pos_1 = [self.rect.right, self.rect.top + self.cells_size[1] * row]
-            pg.draw.line(surface=screen_to_draw, color='gray', start_pos=pos_0, end_pos=pos_1, width=3)
-
-        mouse_pos = pg.mouse.get_pos()
-        if not self.clicked and self.rect.collidepoint(mouse_pos):
-            center_idx = self.get_index(mouse_pos)
-            indexes = self.get_neighborhoods(center_idx)
-            new_surf = pg.Surface(self.rect.size).convert_alpha()
-            new_surf.fill([0, 0, 0, 0])
-            for idx in indexes:
-                color = self.color
-                if color == [0, 0, 0, 0]:
-                    color = 'white'
-                pg.draw.rect(new_surf, color, self.create_rect(idx))
-            new_surf.set_alpha(150)
-            screen_to_draw.blit(new_surf, self.rect)
-
-    def click_down(self, event):
-        """
-        Check if it is clicked
-        :param event: pg.MOUSEBUTTONDOWN
-        :return: if clicked
-        """
-        for btn in self.buttons:
-            if btn.click_down(event):
-                return True
-        if self.rect.collidepoint(event.pos):
-            self.clicked = True
-            return True
-
-        return False
-
     def get_index(self, pos):
         x, y = pos
         col = int((y - self.rect.top) // self.cells_size.y)
         row = int((x - self.rect.left) // self.cells_size.x)
         return (col, row)
 
-    def update(self, velocity=6):
-        """
-        For naw, it only paints the rects if clicked
-        :param velocity:
-        :param color:
-        :return:
-        """
-        # paint the grid
-        color = self.color
-
-        mouse_pos = pg.mouse.get_pos()
-        if self.rect.collidepoint(mouse_pos):
-            center_idx = self.get_index(mouse_pos)
-            indexes = self.get_neighborhoods(center_idx)
-
-            if self.clicked:
-                # indexes = self.bucket()
-                for idx in indexes:
-                    if idx not in self.selected_cells:
-                        self.selected_cells.add(idx)
-                        self.image.fill(color, self.create_rect(idx))
-
-    def click_up(self, event=None):
-        """
-        Deselect the selected cells and set itself as not clicked
-        :param event: pg.MOUSEBUTTONUP
-        :return: None
-        """
-        for btn in self.buttons:
-            if btn.click_up(event):
-                return True
-        self.selected_cells.clear()
-        if self.clicked:
-            self.clicked = False
-            return True
-        # self.save_image('Images/color_wheel.jpg')
-
-    def save_image(self, name):
-        pg.image.save(self.image, name)
-
-    def create_image(self):
-        new_surf = pg.Surface(self.rect_to_be.size).convert_alpha()
-        new_surf.fill([0, 0, 0, 0])
-        self.draw(new_surf)
-        surf = pg.Surface(self.rect.size).convert_alpha()
-        surf.fill([0, 0, 0, 0])
-        surf.blit(new_surf, [0, 0], self.rect)
-        return pg.transform.scale(surf, self.grid_size).convert_alpha()
-
-    def get_image(self):
-        # return self.create_image()
-        return self.image
-
-    def load_image(self, image):
-        if isinstance(image, str):
-            image = pg.image.load(image).convert_alpha()
-        self.image = pg.transform.scale(image, self.rect.size)
+    ####################### For drawing #######################
+    def fill(self, color):
+        self.image.fill(color)
 
     def set_color(self, color):
         self.color = color
 
+    ### Pen Neighborhoods
+
     def set_pen_size(self, func):
         self.neighborhood_func = func
 
-
-    ### Pen Neighborhoods
     def get_possibilities(self, idx):
         row, col = idx
         max_rows, max_cols = self.grid_size
@@ -286,31 +177,133 @@ class DrawingGrid(Sprite):
         neighborhood = set()
         row, col = center_idx
         neighborhood.add(center_idx)
-        neighborhood.add((self.grid_size[0]-row-1, col))
+        neighborhood.add((self.grid_size[0] - row - 1, col))
         return neighborhood
 
     def get_mirror_horizon(self, center_idx):
         neighborhood = set()
         row, col = center_idx
         neighborhood.add(center_idx)
-        neighborhood.add((row, self.grid_size[1]-col-1))
+        neighborhood.add((row, self.grid_size[1] - col - 1))
         return neighborhood
 
     def get_mirror_full(self, center_idx):
         neighborhood = set()
-        neighborhood = neighborhood|self.get_mirror_horizon(center_idx)
+        neighborhood = neighborhood | self.get_mirror_horizon(center_idx)
         for idx in neighborhood:
-            neighborhood= neighborhood|self.get_mirror_vertical(idx)
+            neighborhood = neighborhood | self.get_mirror_vertical(idx)
         # neighborhood = neighborhood|self.get_mirror_vertical(center_idx)
         return neighborhood
 
 
-    # Tools
+    ####################### Manage handlers #######################
+
+    def draw(self, screen_to_draw):
+        """
+        Drow a thin black rect and the rect with its color
+        :param screen_to_draw: pg.Screen Object
+        :return:
+        """
+        screen_to_draw.blit(self.image, self.rect.topleft)
+
+        for btn in self.buttons:
+            btn.draw(screen_to_draw)
+
+        # draw the lines and columns
+        rows, cols = self.grid_size
+        ## columns
+        for col in range(cols + 1):
+            pos_0 = [self.cells_size[0] * col + self.rect.left, self.rect.top]
+            pos_1 = [self.cells_size[0] * col + self.rect.left, self.rect.bottom]
+            pg.draw.line(surface=screen_to_draw, color='gray', start_pos=pos_0, end_pos=pos_1, width=3)
+
+        ## rows
+        for row in range(rows + 1):
+            pos_0 = [self.rect.left, self.rect.top + self.cells_size[1] * row]
+            pos_1 = [self.rect.right, self.rect.top + self.cells_size[1] * row]
+            pg.draw.line(surface=screen_to_draw, color='gray', start_pos=pos_0, end_pos=pos_1, width=3)
+
+        mouse_pos = pg.mouse.get_pos()
+        if not self.clicked and self.rect.collidepoint(mouse_pos):
+            center_idx = self.get_index(mouse_pos)
+            indexes = self.get_neighborhoods(center_idx)
+            new_surf = pg.Surface(self.rect.size).convert_alpha()
+            new_surf.fill([0, 0, 0, 0])
+            for idx in indexes:
+                color = self.color
+                if color == [0, 0, 0, 0]:
+                    color = 'white'
+                pg.draw.rect(new_surf, color, self.create_rect(idx))
+            new_surf.set_alpha(150)
+            screen_to_draw.blit(new_surf, self.rect)
+
+    def click_down(self, event):
+        """
+        Check if it is clicked
+        :param event: pg.MOUSEBUTTONDOWN
+        :return: if clicked
+        """
+        for btn in self.buttons:
+            if btn.click_down(event):
+                return True
+        if self.rect.collidepoint(event.pos):
+            self.clicked = True
+            return True
+
+        return False
+
+    def click_up(self, event=None):
+        """
+        Deselect the selected cells and set itself as not clicked
+        :param event: pg.MOUSEBUTTONUP
+        :return: None
+        """
+        for btn in self.buttons:
+            if btn.click_up(event):
+                return True
+        self.selected_cells.clear()
+        if self.clicked:
+            self.clicked = False
+            return True
+        # self.save_image('Images/color_wheel.jpg')
+
+    def update(self, velocity=6):
+        """
+        For naw, it only paints the rects if clicked
+        :param velocity:
+        :param color:
+        :return:
+        """
+        # paint the grid
+        color = self.color
+
+        mouse_pos = pg.mouse.get_pos()
+        if self.rect.collidepoint(mouse_pos):
+            center_idx = self.get_index(mouse_pos)
+            indexes = self.get_neighborhoods(center_idx)
+
+            if self.clicked:
+                # indexes = self.bucket()
+                for idx in indexes:
+                    if idx not in self.selected_cells:
+                        self.selected_cells.add(idx)
+                        self.image.fill(color, self.create_rect(idx))
+
+    def save_image(self, name):
+        pg.image.save(self.image, name)
 
 
 
+    ####################### Helpers #######################
 
-# tests
+    def get_image(self):
+        # return self.create_image()
+        return self.image
+
+    def load_image(self, image):
+        if isinstance(image, str):
+            image = pg.image.load(image).convert_alpha()
+        self.image = pg.transform.scale(image, self.rect.size)
 
 if __name__ == '__main__':
     screen = pg.display.set_mode((800, 500))
