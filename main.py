@@ -399,7 +399,6 @@ class Manager:
         if self.grid.rect.collidepoint(pos):
             pos -= self.grid.rect.topleft
             color = self.grid.image.get_at([int(pos.x), int(pos.y)])
-            print(color)
             self.set_color(color)
 
     def copy_surf(self, event):
