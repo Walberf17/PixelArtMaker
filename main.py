@@ -5,6 +5,8 @@ There are good ones, but I want to try something else.
 
 __version__ = '0.2'
 
+import numpy as np
+
 """
 We draw in the center, given a aspect ratio, then we can change the image, where the next one will be saved right 
 on the right side. 
@@ -12,6 +14,8 @@ on the right side.
 
 # import things
 import os, sys
+import json
+import numpy as np
 
 os.environ['KIVY_ORIENTATION'] = 'LandscapeLeft LandscapeRight'
 
@@ -253,7 +257,7 @@ class Manager:
     def build_btns_managers(self):
         # Buttons to manage things
         Button(area=self.button_sizes, center=[.07, .05], rect_to_be=self.rect, text=f'Salvar',
-               on_click_up=partial(self.save_image), groups=[self.btns], image='4',
+               on_click_up=partial(self.export_image), groups=[self.btns], image='4',
                dict_with_images=self.dict_with_images)
         Button(area=self.button_sizes, center=[.95, .9], rect_to_be=self.rect, text=f'Sair',
                on_click_up=partial(sys.exit), groups=[self.btns])
@@ -328,7 +332,7 @@ class Manager:
 
 
     ####################### Manage Files #######################
-    def save_image(self):
+    def export_image(self):
         self.move_to_image()
         max_sprites = self.get_max_sprites()
         grid_size = self.grid_size
@@ -347,6 +351,24 @@ class Manager:
         path = os.path.join(self.saving_folder, f'{name} {grid_size[0]}x{grid_size[1]}.png')
         pg.image.save(full_surf, path)
 
+    def save_file(self):
+        images_list = list()
+        for sprite in self.images:
+            images_list.append(list())
+            for frame in sprite:
+                images_list[-1].append(pg.surfarray.array2d(pg.transform.scale(frame.copy(), self.grid_size)).tolist())
+        with open('test.json', 'w') as file:
+            json.dump(images_list, file)
+
+    def load_file(self):
+        with open('test.json', 'r') as file:
+            images = json.load(file)
+            self.images = list()
+            for sprite in images:
+                self.images.append(list())
+                for frame in sprite:
+                    self.images[-1].append(pg.transform.scale(pg.surfarray.make_surface(np.array(frame)), self.grid.rect.size))
+        self.move_to_image()
 
     def check_folder(self):
         os.makedirs(self.saving_folder, exist_ok=True)
@@ -490,8 +512,10 @@ class Manager:
             6: partial(self.copy_surf, event),
             25: self.paste_surf,
             58: self.help_window,
-            # 8: partial(self.set_pen_size, 'mirror horizontal'),
+            8: partial(self.save_file),
+            15: partial(self.load_file),
             41: sys.exit,
+
 
         }
 
@@ -499,7 +523,7 @@ class Manager:
             func = funcs.get(event.scancode)
             func()
         else:
-            # print(event)
+            print(event)
             pass
 
     def key_up(self, event):
@@ -611,55 +635,14 @@ class Manager:
         helper_scene = HelpWindow(screen)
         helper_scene.run()
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 # runs
-screen = pg.display.set_mode(pg.display.get_desktop_sizes()[0], pg.FULLSCREEN)
-pg.display.set_caption(f'PixelArtMaker')
-screen_rect = screen.get_rect()
-app = Manager(screen_rect, [16, 16])
-scene = Scene(screen,
-              {'draw': [[app]], 'click_down': [[app]], 'update': [[app]], 'key_down': [[app]], 'key_up': [[app]]},
-              fps=60)
-scene.run()
+if __name__=='__main__':
+    # screen = pg.display.set_mode(pg.display.get_desktop_sizes()[0], pg.FULLSCREEN)
+    screen = pg.display.set_mode((200,200))
+    pg.display.set_caption(f'PixelArtMaker')
+    screen_rect = screen.get_rect()
+    app = Manager(screen_rect, [1,4])
+    scene = Scene(screen,
+                  {'draw': [[app]], 'click_down': [[app]], 'update': [[app]], 'key_down': [[app]], 'key_up': [[app]]},
+                  fps=60)
+    scene.run()
