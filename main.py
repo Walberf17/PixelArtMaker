@@ -142,8 +142,8 @@ class Manager:
             '1': {'address': 'size1.png'},
             '2': {'address': 'size2.png'},
             '3': {'address': 'size3.png'},
-            '4': {'address': 'SaveFile 32x32.png',
-                  'size': [32, 32]},
+            #'4': {'address': 'SaveFile 32x32.png',
+            #      'size': [32, 32]},
             '5': {'address': 'transparent_bg'},
             '6': {'address': 'Bucket 32x32.png',
                   'size': [32, 32]},
@@ -153,6 +153,10 @@ class Manager:
                   'size': [17, 16]},
             '9': {'address': 'full mirror 17x17.png',
                   'size': [17, 16]},
+            '10': {'address': 'Brighten 15x15.png',
+                  'size': [15, 15]},
+            '11': {'address': 'Darken 15x15.png',
+                  'size': [15, 15]},
 
         }
         self.saving_folder = os.path.join('.', 'Images', 'Sprites')
@@ -192,7 +196,7 @@ class Manager:
                                                groups=self.markers,
                                                center=[0.07, .32])
 
-        self.color_picker = ColorSelector([.85, 0, .1, .1], [0, .0, 1, 1], self.rect)
+        self.color_picker = ColorSelector([.85, 0, .1, .1], [0, 0, 1, 1], self.rect)
 
         # Resolution - Grid Size
         width, height = self.grid_size
@@ -215,6 +219,8 @@ class Manager:
 
         # Tools Selection
         self.selection_size_rect = pg.Rect([0, 0], calc_proportional_size([.03, .06], max_rect=self.rect))
+        self.selection_tool_rect = pg.Rect([-500, -500], calc_proportional_size([.03, .06], max_rect=self.rect))
+
 
         ####################### Calls #######################
         self.images[0].append(self.grid.get_image())
@@ -222,7 +228,6 @@ class Manager:
         self.build()
         self.check_folder()
         self.change_resolution()
-
 
     ####################### Build things #######################
     def build(self):
@@ -238,12 +243,13 @@ class Manager:
 
     def build_btns_idx(self):
         # Buttons to change the index
+
         w, h = .3, .3
         default_x_dif = .05
 
         center = pg.Vector2(.5, .5)
         default_rect = pg.Rect(calc_proportional_size([0, 0, .1, .2], max_rect=self.rect))
-        default_rect.center = calc_proportional_size([1 - default_x_dif, .3], max_rect=self.rect)
+        default_rect.center = calc_proportional_size([1-(.25/4), .5], max_rect=self.rect)
 
         Button(area=[w, h], center=center - [w, 0], rect_to_be=default_rect, text=f'<',
                on_click_up=partial(self.move_to_image, 0, -1), groups=[self.btns])
@@ -300,7 +306,7 @@ class Manager:
                on_click_up=partial(self.set_pen_size, 8), dict_with_images=self.dict_with_images)
 
         # for the second line
-        ToolButton(area=area, center=center, rect_to_be=second_line, text=f'Balde',
+        ToolButton(area=area, center=center+diff, rect_to_be=second_line, text=f'Balde',
                on_click_up=partial(self.set_pen_size, 'color'), groups=[self.btns], image='6',
                dict_with_images=self.dict_with_images)
 
@@ -319,8 +325,18 @@ class Manager:
                    dict_with_images=self.dict_with_images)
 
         # The Eraser
-        Button(text='Borracha', area=[.1, .1], center=[.75, .05], rect_to_be=self.rect, groups=[self.btns],
-               on_click_up=partial(self.active_eraser), keep_ratio=True, colors=['white']*3)
+        Button(text='Borracha', area=[.09, .09], center=[.75, .05], rect_to_be=self.rect, groups=[self.btns],
+               on_click_up=partial(self.active_eraser), keep_ratio=True, colors=[[50, 50, 50, 180]]*3, font_color='white')
+
+        # light and dark
+        l_d_rect = pg.Rect(calc_proportional_size([.85, .1, .1, .05], max_rect=self.rect))
+        ToolButton(text='+', area=[.4, 1], center=[.25, .5], rect_to_be=l_d_rect, groups=[self.btns],
+                   on_click_up=partial(self.lighten), keep_ratio=True, colors=[[0, 0, 0, 0]] * 3,
+                   image = '10', dict_with_images = self.dict_with_images)
+
+        ToolButton(text='-', area=[.4, 1], center=[.75, .5], rect_to_be=l_d_rect, groups=[self.btns],
+               on_click_up=partial(self.darken), keep_ratio=True, colors=[[0, 0, 0, 0]] * 3,
+               image='11', dict_with_images=self.dict_with_images)
 
     def build_texts(self):
         # texts
@@ -328,8 +344,6 @@ class Manager:
                 font_color='black', bg_color=None, groups=[self.texts])
         TextBox(text='Resolução:', area=[.1, .05], rect_to_be=self.rect, relative_center=[0.07, .55],
                 font_color='black', bg_color=None, groups=[self.texts])
-
-
 
     ####################### Manage Files #######################
     def export_image(self):
@@ -459,6 +473,19 @@ class Manager:
         height = max(int((self.marker_cols.get_percent() * self.max_resolution)), 1)
         self.text_resolution.change_text(new_text=f'[{width} x {height}]')
 
+    def darken(self, btn=None):
+        if self.grid.change_darken():
+            self.selection_tool_rect.size = calc_proportional_size([1.1, 1.1], max_rect=btn.rect)
+            self.selection_tool_rect.center = btn.rect.center
+        else:
+            self.selection_tool_rect.bottom = self.rect.top
+
+    def lighten(self, btn=None):
+        if self.grid.change_lighten():
+            self.selection_tool_rect.size = calc_proportional_size([1.1, 1.1], max_rect=btn.rect)
+            self.selection_tool_rect.center = btn.rect.center
+        else:
+            self.selection_tool_rect.bottom = self.rect.top
 
     def change_resolution(self):
         width = max(int((self.marker_rows.get_percent() * self.max_resolution)), 1)
@@ -512,8 +539,8 @@ class Manager:
             6: partial(self.copy_surf, event),
             25: self.paste_surf,
             58: self.help_window,
-            8: partial(self.save_file),
-            15: partial(self.load_file),
+            45: partial(self.darken),
+            46: partial(self.lighten),
             41: sys.exit,
 
 
@@ -530,16 +557,20 @@ class Manager:
         funcs = {
             44: partial(self.change_background_func, self.get_background_image),
             5: self.active_eraser,
+            45: partial(self.darken),
+            46: partial(self.lighten),
         }
 
         if event.scancode in funcs:
             func = funcs.get(event.scancode)
             func()
+
     def draw(self, screen_to_draw):
 
         screen_to_draw.blit(self.bg_for_grid, self.grid.rect, self.grid.rect)
         screen_to_draw.blit(self.bg_for_grid, self.animator.rect, self.animator.rect)
         pg.draw.rect(screen_to_draw, 'white', self.selection_size_rect)
+        pg.draw.rect(screen_to_draw, 'white', self.selection_tool_rect)
         # pg.draw.rect(screen_to_draw, 'white', self.grid.rect)
 
         self.grid.draw(screen_to_draw)
@@ -637,11 +668,11 @@ class Manager:
 
 # runs
 if __name__=='__main__':
-    # screen = pg.display.set_mode(pg.display.get_desktop_sizes()[0], pg.FULLSCREEN)
-    screen = pg.display.set_mode((200,200))
+    screen = pg.display.set_mode(pg.display.get_desktop_sizes()[0], pg.FULLSCREEN)
+    # screen = pg.display.set_mode((200,200))
     pg.display.set_caption(f'PixelArtMaker')
     screen_rect = screen.get_rect()
-    app = Manager(screen_rect, [1,4])
+    app = Manager(screen_rect, [32,32])
     scene = Scene(screen,
                   {'draw': [[app]], 'click_down': [[app]], 'update': [[app]], 'key_down': [[app]], 'key_up': [[app]]},
                   fps=60)

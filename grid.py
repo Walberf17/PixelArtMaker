@@ -70,6 +70,8 @@ class DrawingGrid(Sprite):
         self.rect = new_rect
         self.image = pg.Surface(self.rect.size).convert_alpha()
         self.fill(self.background)
+        self.darken = False
+        self.lighten = False
 
         self.neighborhood_func = self.get_1_neighborhood
 
@@ -116,6 +118,38 @@ class DrawingGrid(Sprite):
 
     def set_color(self, color):
         self.color = color
+
+    def make_it_darker(self, color):
+        color = list(color)
+        if color[-1] <= 10:
+            return color
+        dark_val = -50
+        new_color = list()
+        for val in color[:3]:
+            new_color.append(max([val+dark_val, 0]))
+        new_color.append(color[-1])
+        return new_color
+
+    def make_it_lighter(self, color):
+        color = list(color)
+        if color[-1] <= 10:
+            return color
+        light_val = 50
+        new_color = list()
+        for val in color[:3]:
+            new_color.append(min([val+light_val, 255]))
+        new_color.append(color[-1])
+        return new_color
+
+    def change_darken(self):
+        self.darken = not self.darken
+        self.lighten = False
+        return self.darken
+
+    def change_lighten(self):
+        self.lighten = not self.lighten
+        self.darken = False
+        return self.lighten
 
     ### Pen Neighborhoods
 
@@ -224,16 +258,25 @@ class DrawingGrid(Sprite):
             pg.draw.line(surface=screen_to_draw, color='gray', start_pos=pos_0, end_pos=pos_1, width=3)
 
         mouse_pos = pg.mouse.get_pos()
-        if not self.clicked and self.rect.collidepoint(mouse_pos):
+        if self.rect.collidepoint(mouse_pos):
             center_idx = self.get_index(mouse_pos)
             indexes = self.get_neighborhoods(center_idx)
             new_surf = pg.Surface(self.rect.size).convert_alpha()
             new_surf.fill([0, 0, 0, 0])
             for idx in indexes:
+                rect_to_paint = self.create_rect(idx)
                 color = self.color
                 if color == [0, 0, 0, 0]:
                     color = 'white'
-                pg.draw.rect(new_surf, color, self.create_rect(idx))
+                if self.lighten:
+                    color = self.make_it_lighter(self.image.get_at(rect_to_paint.center))
+                elif self.darken:
+                    color = self.make_it_darker(self.image.get_at(rect_to_paint.center))
+                pg.draw.rect(new_surf, color, rect_to_paint)
+                if self.lighten:
+                    pg.draw.rect(new_surf, 'white', rect_to_paint, 20)
+                elif self.darken:
+                    pg.draw.rect(new_surf, 'black', rect_to_paint, 20)
             new_surf.set_alpha(150)
             screen_to_draw.blit(new_surf, self.rect)
 
@@ -276,16 +319,19 @@ class DrawingGrid(Sprite):
         """
         # paint the grid
         color = self.color
-
         mouse_pos = pg.mouse.get_pos()
         if self.rect.collidepoint(mouse_pos):
             center_idx = self.get_index(mouse_pos)
             indexes = self.get_neighborhoods(center_idx)
 
             if self.clicked:
-                # indexes = self.bucket()
                 for idx in indexes:
                     if idx not in self.selected_cells:
+                        rect_to_paint = self.create_rect(idx)
+                        if self.lighten:
+                            color = self.make_it_lighter(self.image.get_at(rect_to_paint.center))
+                        elif self.darken:
+                            color = self.make_it_darker(self.image.get_at(rect_to_paint.center))
                         self.selected_cells.add(idx)
                         self.image.fill(color, self.create_rect(idx))
 
